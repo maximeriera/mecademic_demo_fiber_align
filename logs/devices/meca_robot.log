@@ -1,0 +1,4 @@
+2026-10-30 14:18:49 | INFO    | MainThread       | device.meca_robot      | Device:87   | [meca_robot] device created.
+2026-10-30 14:20:53 | INFO    | MainThread       | device.meca_robot      | MecaRobot:86   | Shutting down MecaRobot at 192.168.0.100
+2026-10-30 14:20:53 | INFO    | MainThread       | device.meca_robot      | Device:105  | [meca_robot] device is being deleted.
+2026-10-30 14:20:53 | INFO    | MainThread       | device.meca_robot      | MecaRobot:86   | Shutting down MecaRobot at 192.168.0.100

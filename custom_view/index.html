@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Fiber Alignment | Custom View</title>
+    <!-- Brand font, colour tokens and background from the standard app. -->
+    <link rel="stylesheet" href="/static/css/app.css">
+    <style>
+        body {
+            justify-content: flex-start;
+            padding: 0 16px 16px;
+        }
+
+        /* Everything but the events fits exactly one 1080p screen: the plots
+           take whatever height the other rows leave. */
+        .screen {
+            width: min(100%, 1880px);
+            height: 100vh;
+            height: 100dvh;
+            min-height: 760px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 8px 0 12px;
+            font-size: 16px;
+        }
+        .screen .view-topbar {
+            width: 100%;
+            margin-bottom: 0;
+            padding-bottom: 10px;
+        }
+        .view-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 4px 14px;
+        }
+        .view-header h1 {
+            margin: 0;
+            font-size: 1.2em;
+            color: var(--color-accent);
+        }
+        .view-sub { color: var(--color-muted); font-size: 0.8em; }
+        .banner {
+            padding: 8px 14px;
+            border: 1px solid var(--color-red);
+            border-radius: var(--radius-control);
+            color: var(--color-red);
+            background: rgba(255, 90, 107, 0.08);
+            font-size: 0.9em;
+        }
+        .card {
+            background: var(--color-panel);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius);
+            padding: 10px 14px 12px;
+            min-width: 0;
+        }
+        .card-title,
+        .sub-title,
+        .power-state {
+            font-size: 0.72em;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .card-title { color: var(--color-accent-soft); margin-bottom: 6px; }
+        .card-title span {
+            color: var(--color-muted);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-transform: none;
+        }
+        .sub-title { color: var(--color-muted); margin-bottom: 4px; }
+        canvas { display: block; width: 100%; }
+
+        /* --- Row 1: live power, power over time, the alignment and its verdict --- */
+        .head-row {
+            height: clamp(196px, 19vh, 230px);
+            display: grid;
+            grid-template-columns: minmax(300px, 0.9fr) minmax(0, 3fr) minmax(380px, 1.25fr);
+            gap: 10px;
+        }
+        /* Live power: the whole tile turns green at or above the threshold and
+           red below it, so the state reads from across the stand. */
+        .power-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 4px;
+            border-width: 2px;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .power-card.above {
+            background: rgba(93, 239, 191, 0.22);
+            border-color: var(--color-accent);
+            box-shadow: 0 0 18px rgba(93, 239, 191, 0.2);
+        }
+        .power-card.below {
+            background: rgba(255, 90, 107, 0.28);
+            border-color: var(--color-red);
+            box-shadow: 0 0 18px rgba(255, 90, 107, 0.25);
+        }
+        .power-value {
+            font-size: 3.2em;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--color-text);
+            font-variant-numeric: tabular-nums;
+        }
+        .power-value .unit { font-size: 0.4em; font-weight: 600; color: var(--color-muted); margin-left: 8px; }
+        .power-card.above .power-value { color: var(--color-accent); }
+        .power-card.below .power-value { color: var(--color-red); }
+        .power-threshold { color: var(--color-muted); font-variant-numeric: tabular-nums; }
+        .power-threshold strong { color: var(--color-text); }
+        .power-state { color: var(--color-muted); }
+        .power-card.above .power-state { color: var(--color-accent); }
+        .power-card.below .power-state { color: var(--color-red); }
+
+        .trace-card,
+        .run-card { display: flex; flex-direction: column; min-height: 0; }
+        .trace-card canvas { flex: 1; min-height: 0; }
+
+        .run-card { gap: 4px; overflow: hidden; }
+        .run-card .card-title { margin-bottom: 0; }
+        .verdict,
+        .verdict-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .verdict { font-size: 1.5em; font-weight: 800; line-height: 1.2; color: var(--color-muted); }
+        .verdict.live { color: var(--color-yellow); }
+        .verdict.ok { color: var(--color-accent); }
+        .verdict.ng { color: var(--color-red); }
+        .verdict-sub { color: var(--color-muted); font-size: 0.85em; font-variant-numeric: tabular-nums; }
+        .budget { display: flex; align-items: center; gap: 10px; font-size: 0.85em; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+        .budget-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+        .budget-fill { height: 100%; width: 0; background: var(--color-accent-2); transition: width 0.3s linear; }
+        .budget-fill.warn { background: var(--color-yellow); }
+        /* One row per phase: state, gain (or progress), duration. */
+        .phases {
+            list-style: none;
+            margin: 2px 0 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 0.9em;
+            font-variant-numeric: tabular-nums;
+            color: var(--color-muted);
+        }
+        .phases li { display: grid; grid-template-columns: 1.2em minmax(0, 1fr) auto 3.8em; gap: 8px; align-items: baseline; }
+        .ph-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ph-metric,
+        .ph-time { text-align: right; white-space: nowrap; }
+        .phases .done,
+        .phases .timed-out { color: var(--color-text); }
+        .phases .done .ph-icon,
+        .phases .done .ph-metric { color: var(--color-accent); }
+        .phases .timed-out .ph-icon,
+        .phases .timed-out .ph-metric { color: var(--color-yellow); }
+        .phases .running { color: var(--color-yellow); }
+        .phases .failed { color: var(--color-red); }
+
+        /* --- Row 2: one card per phase, side by side ---------------------------- */
+        /* view.js sets --plot-columns: one track per card, as wide as its plots
+           ask (a 3D landscape half again as wide as a column of charts). */
+        .plots-row {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: var(--plot-columns, repeat(4, minmax(0, 1fr)));
+            gap: 10px;
+        }
+        .plot-card {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        /* The phase running now. */
+        .plot-card.active {
+            border-color: var(--color-yellow);
+            box-shadow: 0 0 14px rgba(255, 212, 71, 0.18);
+        }
+        .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+        .panel-title { font-size: 1.1em; font-weight: 800; color: var(--color-accent); white-space: nowrap; }
+        .panel-sub {
+            min-width: 0;
+            color: var(--color-muted);
+            font-size: 0.85em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .plot-card.active .panel-sub { color: var(--color-yellow); }
+        .plot-card > canvas,
+        .panel { flex: 1; min-height: 0; }
+        .panel[hidden] { display: none; }
+        /* Profiles: one chart per slot, stacked in a narrow card, 2×2 in a wide one. */
+        .panel-profiles { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: minmax(0, 1fr); gap: 8px; }
+        .panel-profiles[data-slots="3"],
+        .panel-profiles[data-slots="4"] { grid-template-columns: 1fr 1fr; }
+        .panel-profiles canvas { height: 100%; min-height: 0; }
+        /* Peak search: the readings at rest as a landscape, the steps under it. */
+        .peak-body { display: flex; flex-direction: column; gap: 4px; }
+        .peak-map { flex: 3; min-height: 0; }
+        .peak-steps { flex: 1.2; min-height: 0; }
+
+        .events-card { width: min(100%, 1880px); }
+        .events { list-style: none; margin: 0; padding: 0; font-size: 0.85em; font-variant-numeric: tabular-nums; }
+        .events li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--color-border); }
+        .events li:last-child { border-bottom: none; }
+        .events .t { color: var(--color-muted); }
+        .empty { color: var(--color-muted); font-size: 0.9em; }
+
+        /* Too narrow for one screen: stack and scroll normally. */
+        @media (max-width: 1200px) {
+            .screen { height: auto; min-height: 0; }
+            .head-row { height: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .trace-card { grid-column: 1 / -1; grid-row: 2; height: 280px; }
+            .plots-row { flex: none; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 480px; }
+            .plot-card.wide { grid-column: 1 / -1; }
+        }
+        @media (max-width: 700px) {
+            .power-value { font-size: 2.4em; }
+            .head-row,
+            .plots-row { grid-template-columns: minmax(0, 1fr); }
+            .trace-card { grid-row: auto; }
+            .plots-row { grid-auto-rows: 440px; }
+            .plot-card.wide { grid-row: span 2; }
+            .panel-profiles[data-slots="3"],
+            .panel-profiles[data-slots="4"] { grid-template-columns: minmax(0, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <!-- Default top bar (logo, system status + task, current step, back to
+             the controller), mounted here by /static/js/view-header.js. -->
+        <div id="view-topbar"></div>
+
+        <header class="view-header">
+            <h1>Fiber alignment</h1>
+            <div class="view-sub" id="view-status">Connecting…</div>
+        </header>
+
+        <div class="banner" id="setup-error" hidden></div>
+
+        <div class="head-row">
+            <section class="card power-card" id="power-card">
+                <div class="card-title">Power <span>— live</span></div>
+                <div class="power-value"><span id="power-now">—</span><span class="unit" id="power-unit"></span></div>
+                <div class="power-threshold">Threshold <strong id="threshold">—</strong> <span id="margin"></span></div>
+                <div class="power-state" id="power-state">Waiting for the power meter…</div>
+            </section>
+
+            <section class="card trace-card">
+                <div class="card-title">Power over time <span>— dB vs threshold, best so far in green</span></div>
+                <canvas id="chart-trace"></canvas>
+            </section>
+
+            <section class="card run-card">
+                <div class="card-title">Alignment <span id="run-fiber"></span></div>
+                <div class="verdict" id="verdict">Waiting for an alignment</div>
+                <div class="verdict-sub" id="verdict-sub"></div>
+                <div class="budget">
+                    <div class="budget-bar"><div class="budget-fill" id="budget-fill"></div></div>
+                    <span id="budget-text">—</span>
+                </div>
+                <ol class="phases" id="phase-list"></ol>
+            </section>
+        </div>
+
+        <!-- One card per phase of the alignment, built by view.js from the
+             views the algorithm declares (algorithm.PHASE_VIEWS). -->
+        <div class="plots-row" id="plots"></div>
+    </div>
+
+    <section class="card events-card">
+        <div class="card-title">Events <span>— latest first</span></div>
+        <ul class="events" id="events"><li class="empty">No events yet.</li></ul>
+    </section>
+
+    <script src="/static/js/view-header.js"></script>
+    <script src="/static/js/datahub.js"></script>
+    <script src="plot3d.js"></script>
+    <script src="chart2d.js"></script>
+    <script src="landscape.js"></script>
+    <script src="view.js"></script>
+</body>
+</html>

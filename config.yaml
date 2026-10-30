@@ -1,0 +1,276 @@
+# config.yaml
+#
+# Declare every device used by the application under the `devices` key.
+# Each entry has a unique name (used as the device_id in code) and a `type`
+# that tells the ApplicationController which driver class to instantiate.
+#
+# ============================================================
+# SUPPORTED DEVICE TYPES — copy, uncomment and fill in values
+# ============================================================
+#
+# --- Mecademic Robot (MecaRobot) ---
+#   type: "mecademic"
+#   ip_address: "192.168.0.100"     # IP address of the robot controller
+#
+# --- Asyril Eye+ Feeder (AsyrilEyePlus) ---
+#   type: "asyril"
+#   ip_address: "192.168.0.50"      # IP address of the Eye+ controller
+#   recipe: 63083                   # Recipe identifier (integer)
+#   port: 7171                      # TCP port (optional, default: 7171)
+#
+# --- Arduino / Firmata I/O board (ArduinoBoard) ---
+#   type: "arduino"
+#   Port: "COM3"                    # Serial port the Arduino is connected to
+#
+# --- Planar Motor System (PlanarMotor) ---
+#   type: "planarmotor"
+#   ip_address: "192.168.10.200"    # IP address of the PMC controller
+#
+# --- Moxa ioLogik E1212 Remote I/O (IoLogikE1212) ---
+#   type: "iologik"
+#   ip_address: "192.168.127.254"   # IP address of the ioLogik unit
+#   port: 502                       # Modbus TCP port (optional, default: 502)
+#   slave_id: 1                     # Modbus slave/unit ID (optional, default: 1)
+#
+# --- Brainboxes ED Digital I/O (BrainboxesEDDigital) ---
+#   type: "brainboxes_ed_digital"
+#   ip_address: "192.168.0.74"      # Device IP address
+#   address: 1                       # ED address (optional, default: 1)
+#   port: 9500                       # TCP port (optional, default: 9500)
+#   timeout: 5.0                     # seconds (optional)
+#
+# --- Brainboxes ED Analogue Input (BrainboxesEDAnalogueInput) ---
+#   type: "brainboxes_ed_analogue_input"
+#   ip_address: "192.168.0.75"
+#   address: 1
+#   port: 9500
+#   timeout: 5.0
+#
+# --- Brainboxes ED Analogue Output (BrainboxesEDAnalogueOutput) ---
+#   type: "brainboxes_ed_analogue_output"
+#   ip_address: "192.168.0.76"
+#   address: 1
+#   port: 9500
+#   timeout: 5.0
+#
+# --- LMI Gocator 3D Sensor (LMISensor) ---
+#   type: "lmi"
+#   ip_address: "127.0.0.1"
+#   control_port: 8190   # optional
+#   data_port: 8190      # optional
+#   health_port: 8190    # optional
+#   delimiter: ","      # optional — must match GoPxL setting
+#   terminator: "\r\n"  # optional — must match GoPxL setting
+#
+# --- GigE Vision Camera (GigEVisionDevice) ---
+#   type: "gige_camera"
+#   cti_path: "C:/Program Files/Teledyne/Spinnaker/cti64/vs2015/Spinnaker_GenTL_v140.cti"
+#   camera_index: 0              # optional, default: 0
+#   autostart_stream: false      # optional, default: false
+#
+# --- Thorlabs PM-series Power Meter (ThorlabsPowerMeter) ---
+#   PM100A/D/USB, PM101-103, PM16x, PM400, PM5020, ... over USB (or TCPIP).
+#   type: "thorlabs_pm"          # alias: "thorlabs_power_meter"
+#   resource: "USB0::0x1313::0x8078::P0012345::INSTR"  # optional — omit to auto-detect
+#                                #   the only meter attached (fails if there are several)
+#   backend: "@py"               # optional — PyVISA backend; omit to use the VISA
+#                                #   runtime if installed, else pyvisa-py
+#   timeout_ms: 5000             # optional — raise it for averaging above ~1500
+#   wavelength: 1064             # optional, nm — set at every Initialize
+#   averaging: 10                # optional — samples per reading (~3 ms each on PM100x)
+#   power_unit: "W"              # optional — "W" or "DBM"; the meter keeps its last
+#                                #   unit across power cycles
+#
+# --- SmarAct MCS2 Positioner Controller (SmarActMCS2) ---
+#   Linear stages on an MCS2, over its Ethernet ASCII interface. One device per
+#   controller; task code picks the channel: stage.api.move_to_mm(0, 12.5), then
+#   stage.api.wait(0) (raises on ABORT or if the move failed).
+#   type: "smaract_mcs2"         # aliases: "mcs2", "smaract"
+#   ip_address: "192.168.1.200"
+#   port: 55551                  # optional, default: 55551
+#   timeout: 5.0                 # optional, seconds — per reply
+#   channels: [0]                # optional — channels used; default: all. Each must
+#                                #   have a sensor
+#   reference: "if_needed"       # optional — at Initialize: "if_needed" (only channels
+#                                #   not referenced yet), "always", or "never"
+#   reference_reverse: false     # optional — start the reference search in reverse
+#   reference_timeout_s: 120     # optional — per channel
+#   velocity_mm_s: 5.0           # optional — set at every Initialize
+#   acceleration_mm_s2: 50.0     # optional — set at every Initialize
+#
+# --- Simulated Device (SimulatedDevice) — no hardware required ---
+#   Stands in for ANY device type above so the app can be developed/tested
+#   with no robot, feeder, or I/O hardware in the loop. Its `.api` accepts
+#   any method call (e.g. MoveJoints(...), WaitIdle()) and logs it as a
+#   no-op, so app_logic written against a real driver runs unmodified.
+#   type: "simulated"            # aliases: "dummy", "fake"
+#   connect_delay: 0.5           # optional, seconds — simulate connection latency
+#   fail_to_connect: false       # optional — raise on initialize(), to test FAULTED path
+#   fail_rate: 0.0               # optional, 0-1 — chance `faulted` flips True per check
+#   info:                        # optional — static info dict shown in the UI
+#     model: "SimulatedMecaRobot"
+#     serial_number: "SIM-0001"
+#
+# ============================================================
+# CONTEXT — params & variables (optional)
+# ============================================================
+#
+# Params (tunable inputs) and variables (runtime values) shared by every task
+# function through `context`, and edited from the Variables tab. They are
+# declared in a separate file, by default `context.yaml` next to this one.
+#
+# Top-level key (optional):
+#   context_file: "context.yaml"    # relative to this file's folder
+#
+# Without a context file the app runs normally: context.get_param("x", default)
+# returns the default, the Variables tab explains how to add one, and step
+# tracking and production metrics are unaffected.
+#
+context_file: "context.yaml"
+
+
+# ============================================================
+# FIBER ALIGNMENT CELL
+# ============================================================
+# A Mecademic robot takes one of N receiving fibers (read by the power meter)
+# from its rack, brings it in front of a fixed fiber that emits the laser (fixed
+# for safety: the robot only moves the receiving end), aligns it until the power
+# reaches a threshold, backs out and puts it back where it was. README.md in this folder maps the files and lists what is left
+# to fill in (poses, gripper positions, alignment algorithm).
+#
+# The device names below are also declared in fiber_alignment/cell.py: rename
+# one here, rename it there.
+
+manual_actions:
+  # One button per process step, in process order, then the helpers. Each runs
+  # the same function as production (fiber_alignment/process.py).
+  - key: "pick_fiber"
+    label: "Pick Fiber"
+    description: "Take the fiber selected by the manual_fiber param (Variables tab): robot program fiber<N>_in, close the gripper, fiber<N>_out."
+    confirm_title: "Confirm Pick"
+    confirm_message: "Pick the fiber set in manual_fiber? The gripper must be empty."
+
+  - key: "move_to_alignment"
+    label: "Move to Alignment Start"
+    description: "Bring the held fiber in front of the fixed fiber: robot program align_start."
+    confirm_title: "Confirm Move to Alignment"
+    confirm_message: "Move the held fiber to the alignment start? Check that the area around the fixed fiber is clear."
+
+  - key: "random_offset"
+    label: "Random Offset"
+    description: "At the alignment station, move the fiber by a random offset in its tool frame (MoveLinRelTrf): X/Z up to random_offset_um, Rx/Rz up to random_offset_deg. Never along the fiber."
+    confirm_title: "Confirm Random Offset"
+    confirm_message: "Move the fiber by a random offset at the alignment station?"
+
+  - key: "align_fiber"
+    label: "Alignment"
+    description: "Run the alignment algorithm from the current pose (spirals, axial search, gradient circles). The custom view graph updates live."
+    confirm_title: "Confirm Alignment"
+    confirm_message: "Run the alignment from the current pose?"
+
+  - key: "retract_fiber"
+    label: "Retract"
+    description: "Back the fiber out of the alignment station: robot program align_retract."
+    confirm_title: "Confirm Retract"
+    confirm_message: "Retract the fiber from the alignment station?"
+
+  - key: "place_fiber"
+    label: "Place Fiber"
+    description: "Put the held fiber back into its own slot: robot program fiber<N>_in, open the gripper, fiber<N>_out."
+    confirm_title: "Confirm Place"
+    confirm_message: "Put the held fiber back into its slot?"
+
+  - key: "full_cycle"
+    label: "Full Cycle"
+    description: "Pick, align, retract and place the manual_fiber fiber once, without the PROD loop."
+    confirm_title: "Confirm Full Cycle"
+    confirm_message: "Run one full cycle on the fiber set in manual_fiber? Ensure the cell is clear before starting."
+
+  - key: "open_gripper"
+    label: "Open Gripper"
+    description: "Open the gripper wherever the robot is. Clears held_fiber: a held fiber is released on the spot."
+    confirm_title: "Confirm Gripper Open"
+    confirm_message: "Open the gripper? Any held fiber is released immediately, wherever the robot is."
+
+  - key: "close_gripper"
+    label: "Close Gripper"
+    description: "Close the gripper. Does not change held_fiber."
+    confirm_title: "Confirm Gripper Close"
+    confirm_message: "Close the gripper?"
+
+# ============================================================
+# SEQUENCES (optional)
+# ============================================================
+#
+# Declaring the expected step order for a task adds "Step 3 of 7", a progress
+# bar, and greyed-out upcoming steps to the UI. It is entirely optional:
+# without it, steps are still recorded, timed and shown live — you just do not
+# get a position within the sequence.
+#
+# Keys are task function names (prod_cycle, home, shipment, calib) or
+# "manual:<action_key>" for a manual action. Only top-level steps are matched;
+# steps nested inside another step are timed but do not advance the position.
+#
+# Report steps from your task logic with the context manager:
+#
+#     def prod_cycle(devices, context):
+#         with context.step("Pick part from feeder"):
+#             robot.MoveJoints(...)
+#             robot.WaitIdle()
+#         with context.step("Inspect part"):
+#             ...
+#
+# home/shipment/calib receive `context` only if they declare a second
+# parameter — existing one-argument functions keep working unchanged.
+#
+# NOTE: step names must be stable identifiers, not per-part data. Using
+# f"Pick part {serial}" creates a new timing bucket per part; the backend caps
+# this at 200 distinct names and warns, but the statistics become useless.
+#
+# The step names below are reported by fiber_alignment/process.py. "Retract
+# from alignment" is conditional in home and shipment: it only runs when the
+# robot was left at the alignment station, so they usually show step 2 of 2.
+# prod.py declares the prod_cycle sequence again at every cycle, for the mode
+# it runs (process.CYCLE_STEPS, or ALIGN_ONLY_STEPS with prod_align_only).
+sequences:
+  prod_cycle:
+    - Pick fiber
+    - Move to alignment start
+    - Align fiber
+    - Retract from alignment
+    - Place fiber
+
+  home:
+    - Retract from alignment
+    - Move to home position
+
+  shipment:
+    - Retract from alignment
+    - Move to shipment position
+
+devices:
+
+  # --- Robot ---
+  meca_robot:
+    type: "mecademic"
+    ip_address: "192.168.0.100"      # TODO: the robot's IP address
+
+  # --- Gripper: SmarAct jaw on an MCS2 controller (see fiber_alignment/gripper.py) ---
+  # The open and closed jaw positions are the gripper_open_mm / gripper_closed_mm
+  # params in context.yaml (Variables tab).
+  fiber_gripper:
+    type: "smaract_mcs2"
+    ip_address: "192.168.0.20"
+    channels: [0]                    # TODO: check — the jaw's channel (the first one listed is used)
+    # Referencing moves the jaw across its travel. "if_needed" only does it when
+    # the controller lost its reference (power cycle): hold no fiber then.
+    reference: "if_needed"
+    velocity_mm_s: 1.0               # TODO: tune — slow enough not to snap the fiber
+
+  # --- Power meter: reads the light the held (receiving) fiber collects ---
+  power_meter:
+    type: "thorlabs_pm"
+    # resource: "USB0::0x1313::0x8078::P0000000::INSTR"  # omit to auto-detect the only meter attached
+    wavelength: 1550                 # nm, from the colleague's alignment script — check against the source
+    averaging: 10                    # ~30 ms per reading on a PM100x
+    power_unit: "W"                  # required: the alignment and the custom view work in watts

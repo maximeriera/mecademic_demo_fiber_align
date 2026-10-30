@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "saved_at": "2026-10-29T20:24:57.566510+00:00",
+  "source": "context.yaml",
+  "values": {
+    "params": {
+      "power_threshold_mw": 0.9,
+      "align_range_um": 2000.0,
+      "align_range_deg": 8.0,
+      "align_timeout_s": 150.0,
+      "align_settle_s": 0.05,
+      "source_power_mw": 1.0,
+      "lateral_width_um": 75.0,
+      "angle_width_deg": 0.075,
+      "acquire_radius_deg": 3.0,
+      "acquire_radius_um": 500.0,
+      "acquire_ring_um": 750.0,
+      "signal_detect_uw": 1.0,
+      "acquire_full_search": false,
+      "use_remembered_pose": false,
+      "peak_grid": 5,
+      "gradient_rounds": 8,
+      "joint_vel_pct": 20.0,
+      "lin_vel_mm_s": 10.0,
+      "gripper_open_mm": 0.0,
+      "gripper_closed_mm": 4.5,
+      "manual_fiber": 1,
+      "prod_align_only": true,
+      "random_offset_um": 300.0,
+      "random_offset_deg": 1.0,
+      "align_only_csv": "alignment/align_only_runs.csv",
+      "cycle_pause_s": 1.0
+    },
+    "variables": {
+      "next_fiber": 2,
+      "held_fiber": 0,
+      "at_alignment": true,
+      "fiber_poses": "{\"0\": {\"pose\": [124.024, -49.8023, 101.3303, 178.7167, -0.0146, 0.6609], \"power_mw\": 0.2209, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}}",
+      "aligned_count": 0,
+      "failed_count": 0
+    }
+  }
+}

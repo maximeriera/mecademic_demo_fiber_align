@@ -1,0 +1,331 @@
+# context.yaml  (optional)
+#
+# Params and variables shared by every task function through `context`, and
+# edited from the Variables tab. Delete this file and the app still runs:
+# context.get_param("x", default) then returns the default, the Variables tab
+# explains how to re-enable it, and steps/metrics are unaffected.
+#
+# The file has 3 sections:
+# 1) settings   -> default reset policy
+# 2) params     -> tunable inputs read by task logic
+# 3) variables  -> runtime values task logic carries between calls
+#
+# Notes:
+# - This file is only read, never rewritten, so comments here are safe.
+# - Values of entries marked `persist: true` are saved to context.state.json
+#   next to this file and restored on the next start. Delete that file to
+#   start again from the defaults.
+# - Every param here persists, so that values tuned in the Variables tab
+#   survive a restart. The other side of it: once a persisted value has been
+#   saved (any persisted entry changing saves them all), changing its
+#   `default` here no longer applies. Press Reset on the entry in the
+#   Variables tab to take the new default.
+# - Only existing entries can be edited from the UI/API; add new ones here.
+# - Types are enforced: a value that cannot be read as the entry's type is
+#   rejected.
+# - Step sequences ("Step 3 of 5") are declared in config.yaml.
+
+settings:
+  # Events that reset an entry back to its `default`, for entries that do not
+  # define their own `reset_on`.
+  # Events: initialize, prod_start, prod_stop, abort, fault
+  # Use `none` (or [none]) to disable resets by default.
+  default_reset_events: none
+
+params:
+  # ENTRY FORMAT (params and variables alike)
+  # <name>:
+  #   type: int | float | bool | str
+  #   default: <typed value>        # starting value, and the value a reset restores
+  #   editable_when_idle: true      # false = read-only in the UI (code can still write it)
+  #   reset_on: [event, ...]        # optional; overrides settings.default_reset_events
+  #   reset_on: none                # never reset automatically
+  #   persist: false                # true = keep the value across restarts
+  #   description: <free text>      # shown in the Variables tab
+
+  # --- Alignment (read by fiber_alignment/alignment.py) -----------------------
+  power_threshold_mw:
+    type: float
+    # 0.5-1 dB under the peak power measured on the setup: 0.76 mW on
+    # 2026-10-28 (with an air gap, two glass/air faces cost ~7 %: a perfect
+    # alignment of a 1 mW source reads about 0.93 mW).
+    default: 0.65
+    editable_when_idle: true
+    persist: true
+    description: Alignment passes when the power meter reads at least this (mW). Shown on the custom view.
+
+  align_range_um:
+    type: float
+    # The lateral search spiral reaches acquire_radius_um from the start, the
+    # centring scans a little beyond: the alignment refuses to start unless
+    # this leaves them 100 µm. Y (along the fiber) is never moved.
+    default: 2000.0
+    editable_when_idle: true
+    persist: true
+    description: How far each of X, Y, Z may go from the alignment start (µm). A pose beyond it is refused before it is sent.
+
+  align_range_deg:
+    type: float
+    # The tilt search spiral reaches acquire_radius_deg from the start: the
+    # alignment refuses to start unless this leaves it 0.5°.
+    default: 8.0
+    editable_when_idle: true
+    persist: true
+    description: How far each of alpha, beta, gamma may turn from the alignment start (°). A pose beyond it is refused before it is sent.
+
+  align_timeout_s:
+    type: float
+    # Alignments on the cell take 40-90 s; a cold start that needs the ring of
+    # tilt spirals (acquire_ring_um) adds up to ~20 s.
+    default: 150.0
+    editable_when_idle: true
+    persist: true
+    description: The alignment gives up after this long and is judged at the best pose found.
+
+  align_settle_s:
+    type: float
+    default: 0.05
+    editable_when_idle: true
+    persist: true
+    description: Pause after each point-to-point alignment move (s).
+
+  # Source and search (fiber_alignment/algorithm.py).
+  source_power_mw:
+    type: float
+    # TODO: the laser's output, measured fiber to meter.
+    default: 1.0
+    editable_when_idle: true
+    persist: true
+    description: Power of the source (mW), what a perfect coupling would read. The scans fix the meter's range from it, and the custom view shows the coupling against it in dB.
+
+  # How wide the coupling is: starting guesses, re-measured by every alignment
+  # (scan spans, steps and spiral pitches follow them). From the cell's
+  # collimated ends, 2026-10-27: ~240 µm and ~0.3°; 2026-10-28: ~0.19° in
+  # tilt. Bare single-mode fibers a few µm apart: ~10 µm and ~5°.
+  lateral_width_um:
+    type: float
+    default: 200.0
+    editable_when_idle: true
+    persist: true
+    description: Lateral offset (µm) at which the power falls to 1/e² of its peak (the 1/e² radius). A starting guess, re-measured by every alignment.
+
+  angle_width_deg:
+    type: float
+    default: 0.2
+    editable_when_idle: true
+    persist: true
+    description: Tilt (°) at which the power falls to 1/e of its peak. A starting guess, re-measured by every alignment.
+
+  acquire_radius_deg:
+    type: float
+    default: 3.0
+    editable_when_idle: true
+    persist: true
+    description: When no light reaches the meter at the start, the search first tilts in a spiral out to this far from the start tilt (°). Must fit inside align_range_deg.
+
+  acquire_radius_um:
+    type: float
+    default: 500.0
+    editable_when_idle: true
+    persist: true
+    description: Still no light after the tilt spiral, the search spirals laterally out to this far from the start (µm). Must fit inside align_range_um.
+
+  acquire_ring_um:
+    type: float
+    # A picked fiber is often off in tilt and sideways at once, which neither
+    # spiral alone finds. 0 turns the ring off.
+    default: 750.0
+    editable_when_idle: true
+    persist: true
+    description: Still no light after both spirals, the tilt spiral runs again at 6 points this far around the start (µm). 0 turns it off. Must fit inside align_range_um.
+
+  signal_detect_uw:
+    type: float
+    # The meter's noise on the cell is ~0.01-0.15 nW: 5 nW is well clear of
+    # it, and finds light far further out than 1 µW (6-9 nW showed on a run
+    # of 2026-10-28 that 1 µW called dark).
+    default: 0.005
+    editable_when_idle: true
+    persist: true
+    description: Lowest power the search counts as light (µW). Raised automatically above the noise measured at the start.
+
+  acquire_full_search:
+    type: bool
+    # For demos: off, light at the start skips the search and each spiral
+    # stops once past the light, which is faster.
+    default: true
+    editable_when_idle: true
+    persist: true
+    description: Run the whole search for first light, even with light at the start - the tilt spiral then the lateral spiral, each to its full radius - to show it. Off, the search stops as soon as it has the light.
+
+  use_remembered_pose:
+    type: bool
+    # Off: every alignment searches from where it starts, as for a fiber
+    # never aligned before. fiber_poses is still kept up to date.
+    default: true
+    editable_when_idle: true
+    persist: true
+    description: Start each alignment where this fiber aligned last (the fiber_poses variable), when there is one. Off, the search always starts from the current pose; the poses are still remembered.
+
+  peak_grid:
+    type: int
+    # 5: 25 readings at rest per iteration, ~2.5 s; 3: 9 readings, ~1 s.
+    default: 5
+    editable_when_idle: true
+    persist: true
+    description: Readings per side of the Peak phase's square pattern (odd, 3 to 9). The pattern spans ±0.2 lateral width around the centre whatever its size, so more readings means a finer grid and a better fit, but a slower phase.
+
+  gradient_rounds:
+    type: int
+    # A round (a lateral circle, then a tilt circle) takes ~2.5 s on the cell; 1 to 4 usually do.
+    default: 8
+    editable_when_idle: true
+    persist: true
+    description: Most rounds of gradient circles at the start of the Peak phase - a circle in x/z, then one in Rx/Rz, each stepping up the slope it reads - before the square pattern. They stop sooner once no step stands out of the noise. 0 skips them (the pattern alone then fixes only x/z, not the tilt).
+
+  # --- Motion (applied at the start of every step) ------------------------------
+  joint_vel_pct:
+    type: float
+    default: 20.0
+    editable_when_idle: true
+    persist: true
+    description: Speed of free moves (MovePose, MoveJoints), % of the robot's maximum joint speed.
+
+  lin_vel_mm_s:
+    type: float
+    default: 10.0
+    editable_when_idle: true
+    persist: true
+    description: Speed of straight moves near the fibers (onto a slot, into and out of the alignment station), mm/s.
+
+  # --- Gripper (read by fiber_alignment/gripper.py) --------------------------------
+  # Positions of the SmarAct jaw channel, in mm from its reference mark.
+  gripper_open_mm:
+    type: float
+    # TODO: teach on the gripper.
+    default: 0.0
+    editable_when_idle: true
+    persist: true
+    description: Jaw position with the gripper open (mm, SmarAct channel position).
+
+  gripper_closed_mm:
+    type: float
+    # TODO: teach on the gripper, with a fiber in the jaws.
+    default: 1.0
+    editable_when_idle: true
+    persist: true
+    description: Jaw position that holds the fiber (mm). Not beyond it, or the jaw stalls and the move fails.
+
+  # --- Manual tab ----------------------------------------------------------------
+  manual_fiber:
+    type: int
+    default: 1
+    editable_when_idle: true
+    persist: true
+    description: Fiber slot (1..N) used by the Pick Fiber and Full Cycle manual actions.
+
+  # --- Alignment-only production (prod.py) ------------------------------------------
+  prod_align_only:
+    type: bool
+    # The fiber stays in the gripper: nothing is picked or placed.
+    default: false
+    editable_when_idle: true
+    persist: true
+    description: 'PROD runs only the alignment, over and over, on the held fiber: Move to alignment start, a random offset (random_offset_um, random_offset_deg), Align, Retract. Off: the full cycle (Pick, Move, Align, Retract, Place).'
+
+  random_offset_um:
+    type: float
+    default: 300.0
+    editable_when_idle: true
+    persist: true
+    description: Largest lateral offset (X/Z in the tool frame, µm) the alignment-only production moves the fiber by from align_start before each alignment. Drawn evenly over a disc of this radius.
+
+  random_offset_deg:
+    type: float
+    default: 1.0
+    editable_when_idle: true
+    persist: true
+    description: Largest tilt offset (Rx/Rz in the tool frame, °) the alignment-only production adds before each alignment. Drawn evenly over a disc of this radius. Never along or about the fiber axis (Y), so the gap stays the one align_start taught.
+
+  align_only_csv:
+    type: str
+    # One row per run: the offset, how the light was found, each phase's
+    # status, time and best power, the result and the final pose.
+    default: alignment/align_only_runs.csv
+    editable_when_idle: true
+    persist: true
+    description: 'CSV file the alignment-only production adds a row to after each alignment (fiber_alignment/runlog.py). Relative to the logs/ folder, or absolute. Empty: no file.'
+
+  # --- Demo pacing -----------------------------------------------------------------
+  cycle_pause_s:
+    type: float
+    default: 1.0
+    editable_when_idle: true
+    persist: true
+    # Deliberately not wrapped in a step: it reads as idle time on the
+    # Production tab, which is how dead time shows up in a real cycle.
+    description: Pause between production cycles (s). Not part of any step, so it reads as idle time.
+
+variables:
+  # The cell's state. Written by fiber_alignment/process.py; editable while
+  # idle so the operator can correct them after a manual intervention (e.g. a
+  # fiber taken out of the gripper by hand). Persisted: a restart keeps them.
+  next_fiber:
+    type: int
+    default: 1
+    editable_when_idle: true
+    reset_on: none
+    persist: true
+    description: Fiber slot the next production cycle processes. Advances 1 → N → 1 after each complete cycle.
+
+  held_fiber:
+    type: int
+    default: 0
+    editable_when_idle: true
+    reset_on: none
+    persist: true
+    description: Fiber slot whose fiber is in the gripper, 0 = none. Place Fiber puts it back into that slot.
+
+  at_alignment:
+    type: bool
+    default: false
+    editable_when_idle: true
+    reset_on: none
+    persist: true
+    description: True while the robot is at the alignment station. HOME and SHIPMENT retract first.
+
+  # Where each fiber aligned last (fiber_alignment/memory.py): its next
+  # alignment starts there. Written after every alignment that ends in light.
+  # Quoted: the value is a JSON string, not a YAML mapping.
+  fiber_poses:
+    type: str
+    default: '{}'
+    editable_when_idle: true
+    reset_on: none
+    persist: true
+    description: 'Robot pose where each fiber aligned last (JSON, by fiber number): its next alignment starts there. Reset (or {}) to forget them all, e.g. after a fiber was moved in its slot.'
+
+  # Results.
+  last_align_power_mw:
+    type: float
+    default: 0.0
+    editable_when_idle: false
+    reset_on: none
+    persist: false
+    description: Power measured at the end of the last alignment (mW).
+
+  aligned_count:
+    type: int
+    default: 0
+    editable_when_idle: false
+    reset_on: prod_start
+    persist: true
+    description: Fibers that reached the threshold since production start.
+
+  failed_count:
+    type: int
+    default: 0
+    editable_when_idle: false
+    reset_on: prod_start
+    persist: true
+    description: Fibers that did not reach the threshold since production start. They are still put back.

@@ -1,0 +1,2 @@
+2026-10-30 14:18:49 | INFO    | MainThread       | device.power_meter     | Device:87   | [power_meter] device created.
+2026-10-30 14:20:53 | INFO    | MainThread       | device.power_meter     | Device:105  | [power_meter] device is being deleted.

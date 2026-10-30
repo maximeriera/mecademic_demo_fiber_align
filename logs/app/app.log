@@ -1,0 +1,10 @@
+2026-10-30 14:18:49 | INFO    | MainThread       | app                    | app:59   | ApplicationController initialized successfully.
+2026-10-30 14:18:49 | INFO    | MainThread       | app                    | app:751  | Starting Flask server on 0.0.0.0:5000
+2026-10-30 14:18:49 | INFO    | http-1           | app                    | app:136  | [req=eef551f0] Controller state observed: (initial) -> Off
+2026-10-30 14:18:49 | INFO    | http-5           | app                    | app:153  | [req=2f0ab195] Device health changed: meca_robot(conn=N,ready=N,fault=Y) | fiber_gripper(conn=N,ready=N,fault=N) | power_meter(conn=N,ready=N,fault=N)
+2026-10-30 14:18:56 | INFO    | http-95          | app                    | app:181  | [req=d5f70a74] GET / -> 200 in 22.2 ms
+2026-10-30 14:18:56 | INFO    | http-106         | app                    | app:181  | [req=67a7dbbe] GET /api/manual/actions -> 200 in 0.2 ms
+2026-10-30 14:18:56 | INFO    | http-109         | app                    | app:181  | [req=c894e7db] GET /api/backup_restore/robots -> 200 in 0.2 ms
+2026-10-30 14:19:01 | INFO    | http-225         | app                    | app:181  | [req=b5b19cf5] GET /api/manual/actions -> 200 in 0.3 ms
+2026-10-30 14:20:53 | INFO    | MainThread       | app                    | app:740  | Received SIGTERM - shutting down APPLICATION controller.
+2026-10-30 14:20:53 | INFO    | MainThread       | app                    | app:714  | Process exit: Shutting down APPLICATION controller.

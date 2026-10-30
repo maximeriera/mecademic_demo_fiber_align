@@ -1,0 +1,19 @@
+2026-10-30 14:18:48 | INFO    | MainThread       | controller             | ApplicationController:89   | Loading controller config from: /webapp/app_logic/config.yaml
+2026-10-30 14:18:48 | DEBUG   | MainThread       | controller             | ManualActions:24   | ManualActions: trying module 'manual_actions'
+2026-10-30 14:18:48 | DEBUG   | MainThread       | controller             | ManualActions:56   | ManualActions: module 'manual_actions' unavailable (No module named 'manual_actions'). Trying next candidate.
+2026-10-30 14:18:48 | DEBUG   | MainThread       | controller             | ManualActions:24   | ManualActions: trying module 'app_logic.manual_actions'
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ManualActions:45   | ManualActions: loaded 9 action(s) from 'app_logic.manual_actions': ['align_fiber', 'close_gripper', 'full_cycle', 'move_to_alignment', 'open_gripper', 'pick_fiber', 'place_fiber', 'random_offset', 'retract_fiber']
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ApplicationController:215  | Manual actions configured in YAML: ['pick_fiber', 'move_to_alignment', 'random_offset', 'align_fiber', 'retract_fiber', 'place_fiber', 'full_cycle', 'open_gripper', 'close_gripper'] | registry keys discovered: ['align_fiber', 'close_gripper', 'full_cycle', 'move_to_alignment', 'open_gripper', 'pick_fiber', 'place_fiber', 'random_offset', 'retract_fiber']
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ApplicationController:228  | Manual actions ready: ['pick_fiber', 'move_to_alignment', 'random_offset', 'align_fiber', 'retract_fiber', 'place_fiber', 'full_cycle', 'open_gripper', 'close_gripper']
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ContextStore:232  | Restored 32 persisted context value(s) from /webapp/app_logic/context.state.json.
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ContextStore:143  | Context loaded from /webapp/app_logic/context.yaml: 26 param(s), 7 variable(s), 32 persisted to context.state.json.
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ApplicationController:264  | Creating Mecademic Robot API for device: meca_robot
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ApplicationController:367  | Creating SmarAct MCS2 API for device: fiber_gripper
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ApplicationController:353  | Creating Thorlabs power meter API for device: power_meter
+2026-10-30 14:18:49 | INFO    | MainThread       | controller             | ApplicationController:97   | ApplicationController initialized with devices: meca_robot, fiber_gripper, power_meter
+2026-10-30 14:20:53 | INFO    | MainThread       | controller             | ApplicationController:834  | Shutting down Robot Controller...
+2026-10-30 14:20:53 | INFO    | MainThread       | controller             | ApplicationController:472  | --- State Change: Off -> Faulted ---
+2026-10-30 14:20:53 | WARNING | MonitorThread    | controller             | ApplicationController:733  | [MonitorThread] Shutdown complete.
+2026-10-30 14:20:53 | WARNING | MainThread       | controller             | ApplicationController:874  | Error during shutdown of device meca_robot: Socket was closed
+2026-10-30 14:20:53 | INFO    | MainThread       | controller             | ApplicationController:472  | --- State Change: Faulted -> Off ---
+2026-10-30 14:20:53 | INFO    | MainThread       | controller             | ApplicationController:877  | Controller shutdown complete.

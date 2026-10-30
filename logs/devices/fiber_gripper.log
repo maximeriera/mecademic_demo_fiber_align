@@ -1,0 +1,2 @@
+2026-10-30 14:18:49 | INFO    | MainThread       | device.fiber_gripper   | Device:87   | [fiber_gripper] device created.
+2026-10-30 14:20:53 | INFO    | MainThread       | device.fiber_gripper   | Device:105  | [fiber_gripper] device is being deleted.
