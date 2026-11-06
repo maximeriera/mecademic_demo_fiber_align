@@ -10,8 +10,10 @@
 //       vlines:  [{x, color, dash}],
 //       markers: [{x, y, color}],                        // rings, e.g. the latest point
 //   });
-//   chart.render();   // draws only what changed since the last call (data, range, size);
-//                     // or hand it to Plot3D.animate() with the 3D plots
+//   chart.render();   // draws only if something changed since the last call (data, range, size);
+//                     // true while a range animation needs more frames. Or hand it to
+//                     // Plot3D.animate() with the 3D plots, with {onChange: Plot3D.requestFrame}:
+//                     // `onChange` is called whenever the chart may need drawing again.
 (function (global) {
     'use strict';
 
@@ -33,6 +35,7 @@
 
     function create(canvas, options) {
         options = options || {};
+        const onChange = options.onChange || (() => {});
         const fontPx = options.fontPx || 13;
         const style = Object.assign({
             text: '#9aa39f',
@@ -76,7 +79,16 @@
             return range;
         }
 
+        // Resizing (or showing) the canvas clears it: draw it again.
+        new ResizeObserver(() => { dirty = true; onChange(); }).observe(canvas);
+
+        // Draws, if anything changed; true while a range animation needs more frames.
         function render() {
+            draw();
+            return anim !== null && canvas.clientWidth > 0 && canvas.clientHeight > 0;
+        }
+
+        function draw() {
             const dpr = window.devicePixelRatio || 1;
             const w = canvas.clientWidth;
             const h = canvas.clientHeight;
@@ -226,7 +238,7 @@
             ctx.restore();
         }
 
-        return {
+        const api = {
             setRange,
             setData(value) {
                 data = Object.assign({ series: [], bands: [], hlines: [], vlines: [], markers: [] }, value);
@@ -240,8 +252,14 @@
                 dirty = dirty || text !== message;
                 message = text;
             },
-            render,
         };
+        // Any setter may have changed the chart: tell the owner (it draws only if so).
+        Object.keys(api).forEach(name => {
+            const set = api[name];
+            api[name] = (...args) => { set(...args); onChange(); };
+        });
+        api.render = render;
+        return api;
     }
 
     global.Chart2D = { create };

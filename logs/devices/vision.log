@@ -1,0 +1,8 @@
+2026-11-02 22:33:07 | INFO    | MainThread       | device.vision          | Device:104  | [vision] device created.
+2026-11-02 22:33:07 | INFO    | MainThread       | device.vision          | Device:122  | [vision] device is being deleted.
+2026-11-02 22:33:57 | INFO    | MainThread       | device.vision          | Device:104  | [vision] device created.
+2026-11-02 22:33:57 | INFO    | MainThread       | device.vision          | Device:122  | [vision] device is being deleted.
+2026-11-02 22:35:52 | INFO    | MainThread       | device.vision          | Device:104  | [vision] device created.
+2026-11-02 22:35:52 | INFO    | MainThread       | device.vision          | Device:122  | [vision] device is being deleted.
+2026-11-02 22:36:26 | INFO    | MainThread       | device.vision          | Device:104  | [vision] device created.
+2026-11-02 22:36:26 | INFO    | MainThread       | device.vision          | Device:122  | [vision] device is being deleted.

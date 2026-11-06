@@ -14,9 +14,12 @@
 //   plot.setLegend({stops: [css, ...], low: 'text', high: 'text',
 //                   marks: [{f: 0.6, text: 'threshold'}]});   // colour bar, top right; f in 0..1 left to right
 //   Plot3D.animate([plot, ...], camera);              // auto-rotates (camera speed > 0); drag to orbit
+//   Plot3D.requestFrame();                             // e.g. a chart's onChange (chart2d.js)
 //
-// Redraws at most 1000 / FRAME_MS times a second, and a plot (or a chart handed
-// to animate) only when it changed: new data or axes, the camera turned, a resize.
+// Frames on demand: one is drawn only when something asked for it (a setter,
+// a drag, a resize, an animation still running, a turning camera), at most
+// 1000 / FRAME_MS a second, and in it a plot (or a chart handed to animate)
+// redraws only if it changed. With nothing changing, the page draws nothing.
 //
 // Orthographic projection, painter's ordering: fine for a few thousand points.
 (function (global) {
@@ -75,15 +78,24 @@
             // Below ~15° the floor collapses and its tick labels pile up.
             cam.pitch = Math.max(0.25, Math.min(1.5, cam.pitch + (e.clientY - last[1]) * 0.01));
             last = [e.clientX, e.clientY];
+            requestFrame();
         });
         const end = () => {
             last = null;
             cam.dragging = false;
             cam.idleUntil = performance.now() + IDLE_AFTER_DRAG_MS;
             canvas.style.cursor = 'grab';
+            requestFrame();
         };
         canvas.addEventListener('pointerup', end);
         canvas.addEventListener('pointercancel', end);
+    }
+
+    // Asks animate() for a frame; until animate() runs, there is nothing to draw.
+    let request = () => {};
+
+    function requestFrame() {
+        request();
     }
 
     const easeOut = t => 1 - Math.pow(1 - t, 3);
@@ -121,6 +133,8 @@
         let surfaceColors = null;
 
         attachDrag(canvas, cam);
+        // Resizing (or showing) the canvas clears it: draw it again.
+        new ResizeObserver(() => { dirty = true; requestFrame(); }).observe(canvas);
 
         function setAxes(value, ms) {
             if (!value) {
@@ -150,7 +164,13 @@
             return axes;
         }
 
+        // Draws, if anything changed; true while an axes animation needs more frames.
         function render() {
+            draw();
+            return anim !== null && canvas.clientWidth > 0 && canvas.clientHeight > 0;
+        }
+
+        function draw() {
             const dpr = window.devicePixelRatio || 1;
             const w = canvas.clientWidth;
             const h = canvas.clientHeight;
@@ -407,7 +427,7 @@
             });
         }
 
-        return {
+        const api = {
             setAxes,
             setLabels(value) { labels = value; dirty = true; },
             setColor(fn) { color = fn; surfaceColors = null; dirty = true; },
@@ -421,8 +441,14 @@
             setFloorPath(value) { floorPath = value || []; dirty = true; },
             setLegend(value) { legend = value || null; dirty = true; },
             setMessage(text) { dirty = dirty || text !== message; message = text; },
-            render,
         };
+        // Any setter may have changed the picture: ask for a frame (it draws only if so).
+        Object.keys(api).forEach(name => {
+            const set = api[name];
+            api[name] = (...args) => { set(...args); requestFrame(); };
+        });
+        api.render = render;
+        return api;
     }
 
     function line2(ctx, a, b) {
@@ -443,20 +469,38 @@
         ctx.closePath();
     }
 
+    // Draws `plots` (anything with render(): true while it needs more frames)
+    // on the frames requestFrame() asks for, at most one per FRAME_MS.
     function animate(plots, cam) {
         const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const turning = () => !still && cam.speed > 0;
+        let pending = false;
         let previous = performance.now();
-        function frame(now) {
+        let drawn = -Infinity;
+        function schedule() {
+            if (pending) return;
+            pending = true;
             requestAnimationFrame(frame);
-            // A 2 ms margin: on a 60 Hz display, every other frame.
-            if (now - previous < FRAME_MS - 2) return;
-            const dt = Math.min(0.1, (now - previous) / 1000);
-            previous = now;
-            if (!still && !cam.dragging && now > cam.idleUntil) cam.yaw += dt * cam.speed;
-            plots.forEach(plot => plot.render());
         }
-        requestAnimationFrame(frame);
+        function frame(now) {
+            pending = false;
+            // A 2 ms margin: on a 60 Hz display, every other frame.
+            if (now - drawn < FRAME_MS - 2) {
+                schedule();
+                return;
+            }
+            const dt = Math.min(0.1, (now - previous) / 1000);
+            previous = drawn = now;
+            if (turning() && !cam.dragging && now > cam.idleUntil) cam.yaw += dt * cam.speed;
+            let again = turning();
+            plots.forEach(plot => {
+                if (plot.render()) again = true;
+            });
+            if (again) schedule();
+        }
+        request = schedule;
+        schedule();
     }
 
-    global.Plot3D = { camera, create, animate, niceTicks, decimalsFor };
+    global.Plot3D = { camera, create, animate, requestFrame, niceTicks, decimalsFor };
 })(window);

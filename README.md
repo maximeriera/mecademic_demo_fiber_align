@@ -248,6 +248,16 @@ its phases and how to plot each (`PHASES`, `PHASE_VIEWS` in
 `fiber_alignment/algorithm.py`), and publishes what the plots need with
 `io.publish()`; `custom_view/__init__.py` documents the data.
 
+Kept light on the cell PC's CPU:
+- **What redraws.** The page draws only what changed. No plot redraws in a
+  loop, and with nothing new the page draws nothing at all.
+- **How often.** The hub is polled every 50 ms, bypassing the browser
+  cache. The run's cards are rebuilt at most 5×/s, and only those whose
+  phase got new data. Axes grow in round steps.
+- **The kiosk Firefox** (`~/snap/firefox/common/kiosk-profile/user.js`):
+  disk cache off, GPU painting on. With the disk cache on, it had stored every
+  poll reply (3 GB). With software painting, it drew everything on the CPU.
+
 ## Testing without the cell
 
 `app_logic/tests/fiber_alignment/sim.py` simulates the cell: a robot executing the

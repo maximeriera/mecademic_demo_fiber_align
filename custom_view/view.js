@@ -15,9 +15,10 @@
     const CONTEXT_POLL_MS = 1000;
     // The hub is polled every POLL_MS: the live tile shows each new reading
     // (custom_view.POWER_RATE_HZ). The run's cards and charts are rebuilt at
-    // most every RUN_RENDER_MS, and only when the hub brought something new for them.
+    // most every RUN_RENDER_MS, and only when the hub brought something new for
+    // them: 5 a second still reads as live, at half the painting of 10.
     const POLL_MS = 50;
-    const RUN_RENDER_MS = 100;
+    const RUN_RENDER_MS = 200;
     // What the page keeps of the hub's channels (s): a run lasts at most
     // align_timeout_s, and a reloaded page redraws the latest one from align_result.
     const HISTORY_S = 600;
@@ -79,6 +80,16 @@
     const dbOf = (watts, ref) => (watts > 0 && ref > 0 ? 10 * Math.log10(watts / ref) : -60);
     const signed = (v, digits = 1) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(digits)}`;
     const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    // Axes that grow in round steps rather than with every reading: each change
+    // animates (some ten redraws), so they should change seldom. `roundUp`: a
+    // value up to a step of about a fifth of it; `roundOut`: a range widened to
+    // steps of about a quarter of its span.
+    const stepOf = (lo, hi, count) => Plot3D.niceTicks(lo, hi, count).step;
+    const roundUp = v => (v > 0 ? Math.ceil(v / stepOf(0, v, 5) - 1e-9) * stepOf(0, v, 5) : v);
+    const roundOut = ([lo, hi]) => {
+        const step = stepOf(lo, hi, 4);
+        return [Math.floor(lo / step + 1e-9) * step, Math.ceil(hi / step - 1e-9) * step];
+    };
 
     // HEAT, interpolated into 256 CSS colours.
     const HEAT_LUT = (() => {
@@ -147,7 +158,7 @@
     let thresholdW = null;  // null until known (no context file, or no such param)
 
     function refreshContext() {
-        fetch('/api/context')
+        fetch('/api/context', { cache: 'no-store' })
             .then(r => r.json())
             .then(ctx => {
                 const param = ctx.enabled && ctx.params ? ctx.params[THRESHOLD_PARAM] : null;
@@ -462,7 +473,7 @@
                     return;
                 }
                 threshold = o.threshold;
-                const r = { x: extent(pts.map(p => p[0]), o.minSpan), y: extent(pts.map(p => p[1]), o.minSpan) };
+                const r = { x: roundOut(extent(pts.map(p => p[0]), o.minSpan)), y: roundOut(extent(pts.map(p => p[1]), o.minSpan)) };
                 ranges = key === o.key && ranges ? { x: union(ranges.x, r.x), y: union(ranges.y, r.y) } : r;
                 key = o.key;
                 // Up to the threshold once the readings come within a tenth of it:
@@ -471,7 +482,7 @@
                 const peak = maxOf(pts.map(p => p[2]), 0);
                 const top = Math.max(threshold > 0 && peak >= 0.1 * threshold ? Math.max(threshold, peak) : peak, o.minTop || 0);
                 unit = unitFor(top || 1e-3);
-                const zTop = ((top || 1e-3) / unit.scale) * 1.1;
+                const zTop = roundUp(((top || 1e-3) / unit.scale) * 1.1);
                 plot.setLabels({ x: `${o.names[0]} (${o.unit})`, y: `${o.names[1]} (${o.unit})`, z: `Power (${unit.name})` });
                 plot.setAxes({ x: ranges.x, y: ranges.y, z: [0, zTop] }, AXES_ANIM_MS);
                 // A reading under zero is the meter's noise: drawn on the floor.
@@ -518,9 +529,13 @@
 
     // --- 2D charts ---------------------------------------------------------------------------------
 
-    const trace = Chart2D.create($('chart-trace'), { fontPx: FONT_PX, xLabel: 'time (s)', yLabel: 'dB vs threshold', message: 'Waiting for an alignment…' });
+    const trace = Chart2D.create($('chart-trace'), {
+        fontPx: FONT_PX, xLabel: 'time (s)', yLabel: 'dB vs threshold', message: 'Waiting for an alignment…',
+        onChange: Plot3D.requestFrame,
+    });
 
-    // Everything drawn each frame: the trace, then the plot cards' plots (refilled when the cards change).
+    // Everything drawn: the trace, then the plot cards' plots (refilled when the
+    // cards change). Frames come only when one of them changed (Plot3D.requestFrame).
     const drawn = [trace];
     Plot3D.animate(drawn, cam);
 
@@ -570,7 +585,7 @@
         const lo = Math.max(-45, Math.min(-10, Math.floor((minOf(dbs, 0) - 2) / 5) * 5));
         // 10 dB over the threshold at least: room for the phase names and the threshold's label above its line.
         const hi = Math.max(10, Math.ceil((maxOf(dbs, 0) + 2) / 5) * 5);
-        const tMax = Math.max(10, run.elapsed, maxOf(points.map(p => p[0]), 0)) * 1.05;
+        const tMax = roundUp(Math.max(10, run.elapsed, maxOf(points.map(p => p[0]), 0)) * 1.05);
         const bands = run.phaseLog.map((p, i) => ({
             x0: p.t0,
             x1: isNum(p.t1) ? p.t1 : run.elapsed,
@@ -751,7 +766,12 @@
         const charts = slots.map(axis => {
             const canvas = document.createElement('canvas');
             grid.append(canvas);
-            return { axis, chart: Chart2D.create(canvas, { fontPx: FONT_PX - 1, message: `Waiting for ${AXES[axis].name} scans…` }) };
+            return {
+                axis,
+                chart: Chart2D.create(canvas, {
+                    fontPx: FONT_PX - 1, message: `Waiting for ${AXES[axis].name} scans…`, onChange: Plot3D.requestFrame,
+                }),
+            };
         });
         return {
             width: slots.length > 2 ? 2 : 1,
@@ -799,6 +819,7 @@
         const plot = landscape(canvas, cam, waiting);
         const chart = Chart2D.create(stepsCanvas, {
             fontPx: FONT_PX - 1, xLabel: 'step', yLabel: 'step (widths)', message: 'No step yet',
+            onChange: Plot3D.requestFrame,
         });
         return {
             width: LANDSCAPE_WIDTH,
@@ -880,7 +901,7 @@
             sub.className = 'panel-sub';
             head.append(title, sub);
             el.append(head, ...body.nodes);
-            return { name, el, sub, width, drawn: body.drawn, update: body.update };
+            return { name, view, el, sub, width, drawn: body.drawn, update: body.update, stamp: null };
         });
         const row = $('plots');
         row.replaceChildren(...cards.map(c => c.el));
@@ -888,11 +909,27 @@
         drawn.splice(1, drawn.length - 1, ...cards.flatMap(c => c.drawn));
     }
 
+    // What a card shows: its phase's state, its readings (a map "until_end"
+    // also takes the later phases'), and what was published in its phase.
+    function cardStamp(run, card, phase) {
+        if (!phase) return 'no phase';
+        let readings = 0;
+        run.samples.forEach(s => {
+            if (s[PHASE] === phase.index || (card.view.until_end && (s[PHASE] > phase.index || s[PHASE] < 0))) readings++;
+        });
+        const published = PUBLISHED.map(name => inPhase(run.published[name], phase).length);
+        return [run.key, run.status, phase.status, readings, ...published].join('|');
+    }
+
     function renderPlots(run, states) {
         layout(run.phases, run.views);
         cards.forEach(card => {
             const phase = states.find(p => p.name === card.name) || null;
             card.el.classList.toggle('active', !!phase && phase.status === 'running');
+            // Unchanged, a card is not rebuilt (nor its plots redrawn).
+            const stamp = cardStamp(run, card, phase);
+            if (stamp === card.stamp) return;
+            card.stamp = stamp;
             card.sub.textContent = card.update(run, phase) || '';
         });
     }
@@ -930,7 +967,7 @@
     }
 
     function refreshManifest() {
-        fetch('/api/data')
+        fetch('/api/data', { cache: 'no-store' })
             .then(r => r.json())
             .then(info => {
                 if (info.epoch_utc) epochMs = Date.parse(info.epoch_utc);

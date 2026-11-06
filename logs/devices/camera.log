@@ -1,0 +1,8 @@
+2026-11-02 22:33:07 | INFO    | MainThread       | device.camera          | Device:104  | [camera] device created.
+2026-11-02 22:33:51 | INFO    | MainThread       | device.camera          | Device:122  | [camera] device is being deleted.
+2026-11-02 22:33:57 | INFO    | MainThread       | device.camera          | Device:104  | [camera] device created.
+2026-11-02 22:34:28 | INFO    | MainThread       | device.camera          | Device:122  | [camera] device is being deleted.
+2026-11-02 22:35:52 | INFO    | MainThread       | device.camera          | Device:104  | [camera] device created.
+2026-11-02 22:36:25 | INFO    | MainThread       | device.camera          | Device:122  | [camera] device is being deleted.
+2026-11-02 22:36:26 | INFO    | MainThread       | device.camera          | Device:104  | [camera] device created.
+2026-11-02 22:41:54 | INFO    | MainThread       | device.camera          | Device:122  | [camera] device is being deleted.

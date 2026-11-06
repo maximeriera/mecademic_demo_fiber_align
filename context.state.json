@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "saved_at": "2026-11-06T02:17:28.685446+00:00",
+  "saved_at": "2026-11-06T20:15:34.003477+00:00",
   "source": "context.yaml",
   "values": {
     "params": {
@@ -15,14 +15,14 @@
       "acquire_radius_deg": 3.0,
       "acquire_radius_um": 500.0,
       "acquire_ring_um": 750.0,
-      "signal_detect_uw": 1.0,
+      "signal_detect_uw": 0.5,
       "acquire_full_search": false,
       "use_remembered_pose": false,
       "peak_grid": 5,
       "gradient_rounds": 8,
       "joint_vel_pct": 50.0,
       "lin_vel_mm_s": 125.0,
-      "gripper_open_mm": -5.0,
+      "gripper_open_mm": 5.0,
       "gripper_closed_mm": 0.0,
       "manual_fiber": 1,
       "prod_align_only": true,
@@ -33,11 +33,13 @@
     },
     "variables": {
       "next_fiber": 2,
-      "held_fiber": 1,
-      "at_alignment": true,
-      "fiber_poses": "{\"0\": {\"pose\": [124.024, -49.8023, 101.3303, 178.7167, -0.0146, 0.6609], \"power_mw\": 0.2209, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}, \"1\": {\"pose\": [209.2133, -51.2644, 97.4137, -175.7957, -0.0968, -2.7366], \"power_mw\": 0.9312, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}}",
-      "aligned_count": 191,
-      "failed_count": 6
+      "held_fiber": 0,
+      "at_alignment": false,
+      "fiber_poses": "{\"0\": {\"pose\": [209.2641, -51.2646, 97.4415, -176.9119, -0.0519, -2.5127], \"power_mw\": 0.932, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}, \"1\": {\"pose\": [209.2144, -51.2639, 97.417, -175.799, -0.0972, -2.7433], \"power_mw\": 0.9258, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}}",
+      "aligned_count": 110,
+      "failed_count": 11,
+      "error_count": 0,
+      "last_error": ""
     }
   }
 }
