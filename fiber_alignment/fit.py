@@ -21,6 +21,15 @@ MAD_TO_SIGMA = 1.4826
 GAUSS_FLOOR = 0.05
 #: Percentile of a profile's readings taken as its baseline.
 BASELINE_PERCENTILE = 10
+#: A fit whose top is more than this many times the highest reading shows no
+#: peak. Readings on one flank of the light are nearly straight in log: the
+#: fitted top lands absurdly far and high, past what a float holds when the
+#: curvature is tiny (an OverflowError on the cell on 2026-11-06).
+MAX_PEAK_RATIO = 1e3
+#: A quadratic's maximum further than this many pattern radii is not trusted:
+#: on a nearly planar log power, rounding alone (±1e-16 with numpy 2.3) can
+#: make the curvature "negative" and put the maximum anywhere.
+NEWTON_MAX_RADII = 10.0
 
 
 @dataclass(frozen=True)
@@ -90,13 +99,19 @@ def gauss1d(coords: Sequence[float], powers: Sequence[float], baseline: Optional
     (a0, a1, a2), *_ = np.linalg.lstsq(a * y[:, None], np.log(y) * y, rcond=None)
     if not a2 < 0:
         return None
+    log_peak = a0 - a1 * a1 / (4 * a2)
+    if not log_peak <= math.log(MAX_PEAK_RATIO * top):
+        return None
     center = mid - a1 / (2 * a2)
-    return Gauss(center=float(center), width=float(math.sqrt(-2.0 / a2)),
-                 peak=float(math.exp(a0 - a1 * a1 / (4 * a2))), baseline=b)
+    return Gauss(center=float(center), width=float(math.sqrt(-2.0 / a2)), peak=float(math.exp(log_peak)), baseline=b)
 
 
 def parabola1d(coords: Sequence[float], powers: Sequence[float]) -> Optional[Parabola]:
-    """Fit a parabola to ln P against ``coords``, or None with fewer than 3 positive readings."""
+    """Fit a parabola to ln P against ``coords``.
+
+    None with fewer than 3 positive readings, or for a maximum more than
+    MAX_PEAK_RATIO times the highest reading.
+    """
     x = np.asarray(coords, dtype=float)
     p = np.asarray(powers, dtype=float)
     ok = np.isfinite(x) & np.isfinite(p) & (p > 0)
@@ -110,7 +125,11 @@ def parabola1d(coords: Sequence[float], powers: Sequence[float]) -> Optional[Par
     if a2 == 0:
         return Parabola(vertex=math.nan, curvature=0.0, peak=math.nan)
     vertex = -a1 / (2 * a2)
-    return Parabola(vertex=float(mid + vertex), curvature=float(a2), peak=float(math.exp(a0 - a1 * a1 / (4 * a2))))
+    log_peak = a0 - a1 * a1 / (4 * a2)
+    if a2 < 0 and not log_peak <= math.log(MAX_PEAK_RATIO * float(p.max())):
+        return None
+    # A minimum (a2 > 0) lies under the readings: its exp cannot overflow.
+    return Parabola(vertex=float(mid + vertex), curvature=float(a2), peak=float(math.exp(log_peak)))
 
 
 def plane_slope(points: Sequence[Tuple[float, float, float]]
@@ -138,9 +157,10 @@ def quad2d_step(points: Sequence[Tuple[float, float, float]], radius: float) -> 
     """The step from the origin towards the maximum of a quadratic fitted to ln P.
 
     ``points`` are ``(u, v, power)`` around the origin (at least 6 positive
-    readings, e.g. a 3×3 or 5×5 pattern). When the fit has a maximum, the
-    step goes there (Newton), clipped to ``radius``. Otherwise it goes
-    ``radius`` up the fitted slope. Returns ``((du, dv), newton)``.
+    readings, e.g. a 3×3 or 5×5 pattern). When the fit has a maximum within
+    NEWTON_MAX_RADII radii, the step goes there (Newton), clipped to
+    ``radius``. Otherwise it goes ``radius`` up the fitted slope. Returns
+    ``((du, dv), newton)``.
     """
     pts = np.asarray([pt for pt in points if all(math.isfinite(c) for c in pt) and pt[2] > 0], dtype=float)
     if len(pts) < 6:
@@ -154,7 +174,8 @@ def quad2d_step(points: Sequence[Tuple[float, float, float]], radius: float) -> 
     newton = bool(np.all(np.linalg.eigvalsh(hessian) < 0))
     if newton:
         step = -np.linalg.solve(hessian, gradient)
-    else:
+        newton = float(np.linalg.norm(step)) <= NEWTON_MAX_RADII * radius
+    if not newton:
         norm = float(np.linalg.norm(gradient))
         step = gradient / norm * radius if norm > 0 else np.zeros(2)
     length = float(np.linalg.norm(step))

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "saved_at": "2026-10-29T20:24:57.566510+00:00",
+  "saved_at": "2026-11-06T02:17:28.685446+00:00",
   "source": "context.yaml",
   "values": {
     "params": {
@@ -20,10 +20,10 @@
       "use_remembered_pose": false,
       "peak_grid": 5,
       "gradient_rounds": 8,
-      "joint_vel_pct": 20.0,
-      "lin_vel_mm_s": 10.0,
-      "gripper_open_mm": 0.0,
-      "gripper_closed_mm": 4.5,
+      "joint_vel_pct": 50.0,
+      "lin_vel_mm_s": 125.0,
+      "gripper_open_mm": -5.0,
+      "gripper_closed_mm": 0.0,
       "manual_fiber": 1,
       "prod_align_only": true,
       "random_offset_um": 300.0,
@@ -33,11 +33,11 @@
     },
     "variables": {
       "next_fiber": 2,
-      "held_fiber": 0,
+      "held_fiber": 1,
       "at_alignment": true,
-      "fiber_poses": "{\"0\": {\"pose\": [124.024, -49.8023, 101.3303, 178.7167, -0.0146, 0.6609], \"power_mw\": 0.2209, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}}",
-      "aligned_count": 0,
-      "failed_count": 0
+      "fiber_poses": "{\"0\": {\"pose\": [124.024, -49.8023, 101.3303, 178.7167, -0.0146, 0.6609], \"power_mw\": 0.2209, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}, \"1\": {\"pose\": [209.2133, -51.2644, 97.4137, -175.7957, -0.0968, -2.7366], \"power_mw\": 0.9312, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}}",
+      "aligned_count": 191,
+      "failed_count": 6
     }
   }
 }

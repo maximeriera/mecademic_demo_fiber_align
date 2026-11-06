@@ -7,12 +7,16 @@ Align, Retract (process.run_align_only_cycle). Nothing is picked or placed,
 ``failed_count`` instead of faulting the cell.
 
 The full cycle works through the rack in order. ``next_fiber`` (context.yaml) says
-which slot comes next, and advances 1 → N → 1 after each complete cycle. A
-cycle that faults leaves it unchanged, so production resumes on the same fiber
+which slot comes next, and advances 1 → N → 1 after each cycle, recovered ones
+included. A cycle that faults leaves it unchanged, so production resumes on the same fiber
 once the cell is recovered.
 
 A fiber that does not reach the threshold is still put back and counted in
-``failed_count``, and the loop goes on with the next fiber.
+``failed_count``, and the loop goes on with the next fiber. So does a cycle
+that hits an error at the alignment station (a software error, a lost reply):
+the fiber is retracted and put back, the error counted in ``error_count`` and
+kept in ``last_error`` (process.recover). An ABORT, a device fault, or an
+error at the rack still faults the cell.
 
 The steps themselves live in fiber_alignment/process.py, shared with the
 Manual tab.
@@ -37,19 +41,32 @@ except ImportError as e:  # pragma: no cover - depends on how the workspace is l
 
 
 def prod_cycle(devices: Dict[str, Device], context: AppContext):
-    """Run one production cycle on fiber ``next_fiber``, or an alignment-only cycle (``prod_align_only``)."""
-    if context.get_param("prod_align_only", False):
-        context.declare_sequence(process.ALIGN_ONLY_STEPS)
-        result = process.run_align_only_cycle(devices, context)
-    else:
-        # Declared every cycle too: the alignment-only sequence would otherwise stay in force.
-        context.declare_sequence(process.CYCLE_STEPS)
-        fiber = context.get_variable("next_fiber", 1)
-        result = process.run_cycle(devices, context, fiber)
-        context.set_variable("next_fiber", poses.next_slot_number(fiber))
+    """Run one production cycle on fiber ``next_fiber``, or an alignment-only cycle (``prod_align_only``).
 
-    counter = "aligned_count" if result is not None and result.passed else "failed_count"
-    context.set_variable(counter, context.get_variable(counter, 0) + 1)
+    An error at the alignment station retracts the fiber, puts it back (in a
+    full cycle) and goes on with the next one (process.recover); it counts in
+    ``error_count``. Any other error faults the cell, as before.
+    """
+    align_only = bool(context.get_param("prod_align_only", False))
+    # Declared every cycle: the other mode's sequence would otherwise stay in force.
+    context.declare_sequence(process.ALIGN_ONLY_STEPS if align_only else process.CYCLE_STEPS)
+    fiber = None if align_only else context.get_variable("next_fiber", 1)
+    started = context.data.now()
+    try:
+        if align_only:
+            result = process.run_align_only_cycle(devices, context)
+        else:
+            result = process.run_cycle(devices, context, fiber)
+    except Exception as e:
+        process.recover(devices, context, e, place=not align_only, since=started)  # re-raises when it cannot
+        result = None
+        counter = None
+    else:
+        counter = "aligned_count" if result is not None and result.passed else "failed_count"
+    if fiber is not None:
+        context.set_variable("next_fiber", poses.next_slot_number(fiber))
+    if counter:
+        context.set_variable(counter, context.get_variable(counter, 0) + 1)
 
     # Demo pacing, deliberately outside any step: it shows as idle time on the
     # Production tab. Remove it, or set cycle_pause_s to 0, to run flat out.

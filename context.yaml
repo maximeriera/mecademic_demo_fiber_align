@@ -329,3 +329,19 @@ variables:
     reset_on: prod_start
     persist: true
     description: Fibers that did not reach the threshold since production start. They are still put back.
+
+  error_count:
+    type: int
+    default: 0
+    editable_when_idle: false
+    reset_on: prod_start
+    persist: true
+    description: Cycles that hit an error at the alignment station since production start. The fiber was retracted and put back, and production went on with the next one.
+
+  last_error:
+    type: str
+    default: ''
+    editable_when_idle: false
+    reset_on: prod_start
+    persist: true
+    description: The latest of those errors, with its time.

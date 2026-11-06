@@ -19,6 +19,19 @@ through the rack in order.
 A fiber that does not reach the threshold is still put back and counted in
 `failed_count`, and the loop moves on to the next fiber.
 
+An error while the fiber is at the alignment station (in Move to alignment
+start, Random offset, Align or Retract) does not stop production either.
+Typical causes are a software error, or a reply from the robot or the meter
+that never came. The fiber is retracted (`align_retract`), put back into its
+slot, and the loop goes on with the next fiber. The error is counted in
+`error_count` and the latest one, with its time, kept in `last_error`
+(`fiber_alignment/process.py`, `recover`). These still fault the cell, as
+before:
+- an ABORT;
+- a device fault, e.g. the robot in error;
+- an error at the rack: the robot may be stopped inside a slot;
+- a recovery that fails itself.
+
 **Alignment-only production** (`prod_align_only` on, Variables tab): PROD
 only aligns the fiber already in the gripper, over and over, each time from
 a random start. Nothing is picked or placed, and `next_fiber` stays as it is.

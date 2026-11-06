@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import math
 import random
+from datetime import datetime
 from typing import Any, Callable, Dict, Optional, Tuple
 
 from core import AppContext
@@ -184,6 +185,43 @@ def run_cycle(devices: Dict[str, Device], context: AppContext, number: int) -> A
     retract_from_alignment(devices, context)
     place_fiber(devices, context)
     return result
+
+
+def recover(devices: Dict[str, Device], context: AppContext, error: Exception, place: bool, since: float) -> None:
+    """After an error in a PROD cycle at the alignment station: retract, put the fiber back (``place``), go on.
+
+    For errors the cell can step back from: a software error, a lost reply, a
+    search that went wrong. Re-raises ``error`` (the cell faults, as before)
+    when it should not move:
+    * after an ABORT or a device fault since ``since`` (the hub time when the
+      cycle started, ``context.data.now()``): the controller marks either
+      before stopping the task. Any one since then counts, not only the
+      latest event: a failing alignment marks align_end after it;
+    * when the robot is not at the alignment station: an error at the rack,
+      where the robot may be stopped inside a slot. The operator must look.
+    If the recovery itself fails, the cell faults with both errors. Records
+    the error in ``error_count`` and ``last_error``.
+    """
+    stopped = any((event or {}).get("name") in ("abort", "fault") for _, event in context.data.window("events", since))
+    if stopped or not context.get_variable("at_alignment", False):
+        raise error
+    logger = devices[ROBOT].logger
+    message = f"{type(error).__name__}: {error}"
+    logger.error(f"PROD cycle failed at the alignment station ({message}). Retracting"
+                 f"{' and putting the fiber back' if place else ''}, then on with the next cycle.")
+    try:
+        # Whatever the error left queued: stop it, and accept the retract.
+        robot = devices[ROBOT].api
+        robot.ClearMotion()
+        robot.ResumeMotion()
+        retract_from_alignment(devices, context)
+        if place and context.get_variable("held_fiber", 0):
+            place_fiber(devices, context)
+    except Exception as recovery_error:
+        raise ProcessError(f"{message}; then the recovery failed: {type(recovery_error).__name__}: "
+                           f"{recovery_error}. Check where the robot and the fiber are.") from recovery_error
+    context.set_variable("error_count", context.get_variable("error_count", 0) + 1)
+    context.set_variable("last_error", f"{datetime.now():%Y-%m-%d %H:%M:%S} {message}"[:300])
 
 
 def run_align_only_cycle(devices: Dict[str, Device], context: AppContext) -> Optional[AlignmentResult]:

@@ -40,6 +40,24 @@ def test_gauss1d_ignores_invalid_readings():
     assert g.width == pytest.approx(6.0, rel=1e-6)
 
 
+@pytest.mark.parametrize("curvature", [-1e-6, -1e-8, -1e-10, 0.0])
+def test_a_profile_on_one_flank_of_the_light_shows_no_peak(curvature):
+    # Nearly straight in log: the fitted top lands absurdly far and high, and
+    # its exp overflowed ("math range error", the cell's PROD on 2026-11-06).
+    xs = np.linspace(0, 90, 60)
+    ps = 1e-4 * np.exp(0.03 * xs + curvature * xs * xs)
+    assert fit.gauss1d(xs, ps, baseline=0.0) is None
+    assert fit.parabola1d(xs, ps) is None or fit.parabola1d(xs, ps).curvature >= 0
+
+
+def test_a_centre_somewhat_outside_the_scan_is_still_fitted():
+    # Readings 1.5 to 2 widths from the centre: the top is ~90× the highest one, a fit to steer the next window by.
+    xs = np.linspace(-480, -360, 40)
+    ps = [gaussian(x, 0.0, 240.0, 1e-3) for x in xs]
+    g = fit.gauss1d(xs, ps, baseline=0.0)
+    assert g is not None and g.center == pytest.approx(0.0, abs=1e-3)
+
+
 def test_parabola1d_finds_the_vertex():
     xs = [-1.5, -0.75, 0.0, 0.75, 1.5]
     ps = [0.8e-3 * math.exp(-((x - 0.4) / 5.5) ** 2) for x in xs]
