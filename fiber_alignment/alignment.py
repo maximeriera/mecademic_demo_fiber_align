@@ -149,6 +149,11 @@ class AlignmentSettings:
     acquire_radius_mm: float
     #: Still no light, the tilt search runs again at points this far around the start (mm); 0: not.
     acquire_ring_mm: float
+    #: How far from the optimum light still shows above the detection level,
+    #: laterally (mm) and in tilt (degrees): the first-light scans pass this
+    #: close to every point they cover.
+    acquire_capture_mm: float
+    acquire_capture_deg: float
     #: Lowest power counted as light (W). The algorithm raises it above the noise it measures.
     signal_detect_w: float
     #: Run both searches for first light to their full radius, even with light
@@ -178,6 +183,12 @@ class AlignmentSettings:
             acquire_radius_mm=float(context.get_param("acquire_radius_um", 500.0)) * 1e-3,
             # Off unless context.yaml sets it (750 there).
             acquire_ring_mm=float(context.get_param("acquire_ring_um", 0.0)) * 1e-3,
+            # Without the params: a pure Gaussian beam's, about 1.9 widths and 2.7
+            # tilt widths at the detection level, with room to spare.
+            acquire_capture_mm=float(context.get_param("acquire_capture_um",
+                                                       1.5 * float(context.get_param("lateral_width_um", 200.0)))) * 1e-3,
+            acquire_capture_deg=float(context.get_param("acquire_capture_deg",
+                                                        2.0 * float(context.get_param("angle_width_deg", 0.3)))),
             signal_detect_w=float(context.get_param("signal_detect_uw", 1.0)) * 1e-6,
             full_search=bool(context.get_param("acquire_full_search", False)),
             peak_grid=int(context.get_param("peak_grid", 5)),

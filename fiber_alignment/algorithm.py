@@ -7,21 +7,31 @@ It never moves the fiber along its axis: the gap stays the one the
 ``align_start`` program taught.
 
 How wide the coupling is, against a lateral offset and against a tilt, sets
-every scale here (scan spans, steps, spiral pitches). The params give starting
+every scale of the later phases (scan spans, steps). The params give starting
 guesses (``lateral_width_um``, ``angle_width_deg``); each fit re-measures them.
+The first-light scans are sized from how far light still shows from the
+optimum instead (``acquire_capture_um``, ``acquire_capture_deg``): a beam's
+faint wings can carry light much further than its core.
 
 ``align`` runs four phases, each inside ``with io.phase(name):`` and plotted by
 the custom view as PHASE_VIEWS declares:
 
 1. Acquire: the noise floor where the search starts: the pose remembered for
    this fiber (``io.seed``) if there is one, else the start. Unless light
-   already reaches the meter, a spiral in tilt (Rx/Rz) there, then, still
-   dark, a spiral in the lateral plane, each until light shows; dark at the
-   remembered pose, the same around the start. Still dark, tilt spirals at
-   ``acquire_ring_um`` around the start (6 points): a picked fiber is often
-   off in tilt and sideways at once, which neither spiral alone finds. Then
-   the move to the best reading. With ``acquire_full_search`` (for demos), the
-   first two spirals run to their full radius, whatever the start reads.
+   already reaches the meter, Lissajous scans of growing discs around it,
+   a translation (x/z) then a rotation (Rx/Rz) at each size. Any hint of
+   light, well above the centre's power but under the detection level,
+   confirmed at rest, becomes the new centre: the scans start again from
+   the smallest disc around it. Light at the detection level, confirmed at
+   rest, ends the search; back at the pose of a reading taken on the move,
+   a fiber that misses the light (the meter lagging, or poses read late)
+   finds it again going back over that stretch of the scan, slower. Dark at
+   the remembered pose, the same around the start;
+   still dark, rotation scans at ``acquire_ring_um`` around the start (6
+   points). The scans are sized from how far light shows from the optimum
+   (``acquire_capture_um``, ``acquire_capture_deg``), not from the beam's
+   core. With ``acquire_full_search`` (for demos), a translation then a
+   rotation scan over the full radius run to their end first.
 2. Center: two-way scans across the light along x then z, each fitted with a
    Gaussian over the noise floor; the fiber moves to the fitted centre until
    it no longer shifts. The two directions also measure what is left of the
@@ -113,19 +123,78 @@ NOISE_READS = 20
 #: Light is a reading this many noise standard deviations above the floor, and
 #: at least signal_detect_uw.
 NOISE_SIGMAS = 8.0
-#: Spiral pitch, in widths, and readings per pitch along the spiral.
-SPIRAL_PITCH_WIDTHS = 1.5
-SPIRAL_READINGS_PER_PITCH = 3
-#: Moves queued per scan: a spiral runs as consecutive scans.
-SPIRAL_CHUNK = 400
-#: A spiral stops once the power falls under this fraction of the best since the light was found.
+#: The search scans growing discs around its centre: these fractions of
+#: acquire_radius_um (translation) and acquire_radius_deg (rotation).
+ACQUIRE_STAGES = (1 / 3, 2 / 3, 1.0)
+#: The searches of each stage, in turn: translation, then rotation.
+SEARCH_ORDER = ("lateral", "angle")
+#: A Lissajous scan, u = A sin(n t), v = A sin((n + 1) t), leaves no point of
+#: its square ± A farther than about LISSAJOUS_GAP · A / n from its path
+#: (measured; its path is about 6.2 · A · n long). Its points beyond A from
+#: the centre are brought back onto that circle: no scan reaches farther
+#: than A, and no point of its disc is left farther from its path.
+LISSAJOUS_GAP = 1.05
+#: Each scan passes within LISSAJOUS_COVER capture radii (acquire_capture_um,
+#: acquire_capture_deg) of every point of its disc, and reads every
+#: LISSAJOUS_READING capture radii along its path: light it crosses shows in
+#: several readings.
+LISSAJOUS_COVER = 0.7
+LISSAJOUS_READING = 0.35
+#: Moves queued per scan: a long path runs as consecutive scans.
+SCAN_CHUNK = 400
+#: A hint of light: HINT_READINGS readings in a row at HINT_RATIO times the
+#: power at rest at the search's centre, at least noise + HINT_SIGMAS σ and
+#: HINT_OF_DETECT of the detection level (never more than the detection
+#: level itself: light is light, however bright the centre already is).
+#: Confirmed at rest, it becomes the new centre and the search starts again
+#: around it, from the smallest disc.
+#: Read on the move, light can show far below what it is: on the cell
+#: (2026-11-06, ~0.1 nW of stray light), scans crossing 1-70 µW read only
+#: 50-100 nW (the meter slow to leave its lowest range). A floor of a quarter
+#: of the 0.5 µW detection level ignored them, and 9 runs of 45 never found
+#: the light; 1/50 of it takes them, and at rest they show the light.
+HINT_RATIO = 3.0
+HINT_SIGMAS = 5.0
+HINT_OF_DETECT = 0.02
+HINT_READINGS = 2
+#: Once light shows, a scan goes on while it grows, and stops once it falls
+#: under PAST_PEAK of its best: the top of the crossing, not its edge.
 PAST_PEAK = 0.5
+#: A scan crosses a capture diameter in at least this long (s): a meter slow
+#: at low power still shows light it passes. The cell's meter takes a while
+#: to leave its lowest range: crossing light faster, it reads µW as 50-100 nW
+#: (2026-11-06). In simulation with such a meter (up after 0.2 s over its
+#: range), the cell's starts found their light 40 times in 40 at 0.15 s,
+#: twice at 0.05 s.
+MIN_CROSSING_S = 0.15
+#: Back at the pose of a reading taken on the move, a power at rest under
+#: CONFIRM_FRACTION of that reading means the reading and its pose were out
+#: of step: the meter lags (the light lies behind the pose along the path),
+#: or the pose reported was old (ahead). The scan goes over BACK_CAPTURES
+#: capture radii of its path around that pose, and at least what it covers
+#: in BACK_LAG_S either side, backwards, BACK_SLOWDOWN times slower: out of
+#: step the other way round, the backward reading and the forward one
+#: bracket the light, and their weighted mean along the path is where it
+#: is, whatever the delay.
+CONFIRM_FRACTION = 0.5
+#: At rest there, a power under the detection level is read again for up to
+#: this long (s), the highest kept: a meter still in its lowest range reads
+#: the top of that range until it switches up (on the cell, µW read as
+#: 50-100 nW), and the light would pass for a mere hint.
+RANGE_SETTLE_S = 0.3
+BACK_CAPTURES = 4.0
+BACK_LAG_S = 0.1
+BACK_SLOWDOWN = 3.0
+#: Path points a scan's reading may lie ahead of the one before: at the
+#: scan's speed it reads every point or more often, a few slow readings
+#: aside. Where it lies along the path, even where the path crosses itself.
+TRACK_AHEAD = 12
 #: Room the window must leave around the searches (mm, degrees).
 WINDOW_MARGIN_MM = 0.1
 ANGLE_MARGIN_DEG = 0.5
-#: Points of the ring of tilt spirals (acquire_ring_um), evenly around the start.
+#: Points of the ring of rotation scans (acquire_ring_um), evenly around the start.
 RING_POINTS = 6
-#: The two axes each spiral moves along.
+#: The two axes each search moves along.
 SEARCH_AXES = {"angle": ("rx", "rz"), "lateral": ("x", "z")}
 
 # --- Center --------------------------------------------------------------------------------
@@ -264,57 +333,39 @@ def align(io: AlignmentIO, settings: AlignmentSettings) -> None:
 
 # --- Acquire -------------------------------------------------------------------------------
 
-def generate_archimedean_spiral(center=(0.0, 0.0), max_radius=0.5, spiral_pitch=0.002, point_spacing=0.001):
-    """
-    Generates a 2-DOF Archimedean spiral path with uniform point spacing.
+@dataclass
+class _Search:
+    """The first-light search in progress: what it heeds, and what it found so far."""
 
-    Parameters:
-    -----------
-    center : tuple of float
-        (axis1_center, axis2_center) center of the search space.
-    max_radius : float
-        Maximum radial distance to search from origin.
-    spiral_pitch : float
-        Radial distance added per 360-degree loop (p).
-    point_spacing : float
-        Linear arc length distance between consecutive points (ds).
+    #: The fields every "acquire" payload carries (noise, detection level, ...).
+    info: Dict
+    #: The power at rest at the search's centre (W): a hint beats it HINT_RATIO times.
+    centre_w: float
+    #: The lowest power a hint may have (W).
+    hint_floor_w: float
+    #: The detection level (W): a hint never needs more, light is light.
+    detect_w: float
+    restarts: int = 0
+    scans: int = 0
 
-    Returns:
-    --------
-    np.ndarray : Array of shape (N, 2) containing (axis1, axis2) coordinates.
-    """
-    c1_0, c2_0 = center
-    b = spiral_pitch / (2.0 * np.pi)
-    if b <= 0:
-        raise ValueError("spiral_pitch must be greater than 0.")
-    theta_max = max_radius / b
-
-    # Iteratively calculate theta values to preserve constant arc length
-    theta_list = [0.0]
-    while theta_list[-1] < theta_max:
-        r_curr = b * theta_list[-1]
-        # Prevent division by zero near the origin by clamping the minimum radius
-        d_theta = point_spacing / max(r_curr, point_spacing)
-        theta_list.append(theta_list[-1] + d_theta)
-
-    thetas = np.array(theta_list)
-    r = b * thetas
-    return np.column_stack((c1_0 + r * np.cos(thetas), c2_0 + r * np.sin(thetas)))
+    def hint_w(self) -> float:
+        return min(self.detect_w, max(self.hint_floor_w, HINT_RATIO * self.centre_w))
 
 
 def acquire(io: AlignmentIO, state: _State) -> None:
-    """The noise floor; unless light shows already, the searches for it; ends on the best reading.
+    """The noise floor; unless light shows already, the search for it; ends on light, confirmed at rest.
 
     It starts at the pose remembered for this fiber (``io.seed``) when the
-    searches around it fit in the window, else at the start. Dark there: a
-    tilt spiral, then a lateral one; dark at the remembered pose, the same
-    around the start; still dark, tilt spirals at the ring's points around
-    the start. With ``full_search``, the first two spirals run to their full
-    radius, light at the start or not, each ending on its best reading: the
-    whole search, for a demo.
+    scans around it fit in the window, else at the start. Dark there: rounds
+    of Lissajous scans of growing discs (``search_rounds``), translation
+    then rotation, restarting around any hint of light; dark at the
+    remembered pose, the same around the start; still dark, rotation scans at
+    the ring's points around the start. With ``full_search`` (demos), a
+    translation then a rotation scan over the full radius run to their end
+    first, light at the start or not.
 
-    Every "acquire" payload says where its search is centred ("around"):
-    "remembered pose", "start", or "ring k/n".
+    Every "acquire" payload says where its scan is centred ("around"):
+    "remembered pose", "start", "hint k" or "ring k/n".
     """
     s = state.settings
     seed = _seed(io, state)
@@ -332,39 +383,33 @@ def acquire(io: AlignmentIO, state: _State) -> None:
         state.baseline_w = noise if math.isfinite(noise) else 0.0
         state.detect_w = max(s.signal_detect_w, noise + NOISE_SIGMAS * sigma) if math.isfinite(noise) else s.signal_detect_w
     info = {"noise_w": noise, "sigma_w": sigma, "detect_w": state.detect_w, "warm": warm, "full": s.full_search,
-            "around": "start" if seed is None else "remembered pose"}
+            "pattern": "lissajous", "around": "start" if seed is None else "remembered pose"}
     if warm and not s.full_search:
         state.peak_w = noise
         io.publish("acquire", {**info, "search": None, "found": True,
                                "at": [round(state.pos["x"], 5), round(state.pos["z"], 5)], "power_w": noise})
         return
-    if s.full_search:
-        found = [spiral(io, state, search, info, full=True) for search in ("angle", "lateral")]
-        if any(found):
-            if not found[-1]:
-                # The light the tilt spiral found, too faint for the lateral one.
-                _goto(io, state)
-                state.peak_w = _still(io, state, "ang")
-            return
-    else:
-        for search in ("angle", "lateral"):
-            if spiral(io, state, search, info):
-                return
+    floor = noise + HINT_SIGMAS * sigma if math.isfinite(noise) else 0.0
+    search = _Search(info, centre_w=max(0.0, state.baseline_w), hint_floor_w=max(HINT_OF_DETECT * state.detect_w, floor),
+                     detect_w=state.detect_w)
+    if s.full_search and full_search(io, state, search):
+        return
+    if search_rounds(io, state, search, info["around"]):
+        return
     where = (f"tilting ±{s.acquire_radius_deg:g}° nor moving ±{s.acquire_radius_mm * 1e3:g} µm around the start"
              + ("" if seed is None else " and around the fiber's remembered pose"))
     if seed is not None:
-        # The fiber is no longer where it aligned last: the same searches around the start.
+        # The fiber is no longer where it aligned last: the same search around the start.
         state.pos.update(x=0.0, z=0.0, rx=0.0, rz=0.0)
         _goto(io, state)
-        for search in ("angle", "lateral"):
-            if spiral(io, state, search, {**info, "around": "start"}):
-                return
+        if search_rounds(io, state, search, "start"):
+            return
     ring = _ring(state)
     for k, (x, z) in enumerate(ring, start=1):
-        # Off sideways too far for the tilt spiral at the start to see the light: the same, from here.
+        # Off sideways too far for the rotation scans at the start to see the light: the same, from here.
         state.pos.update(x=x, z=z, rx=0.0, rz=0.0)
         _goto(io, state)
-        if spiral(io, state, "angle", {**info, "around": f"ring {k}/{len(ring)}"}):
+        if search_rounds(io, state, search, f"ring {k}/{len(ring)}", searches=("angle",)):
             return
     if ring:
         where += f", nor tilting at {len(ring)} points {s.acquire_ring_mm * 1e3:g} µm around it"
@@ -373,10 +418,329 @@ def acquire(io: AlignmentIO, state: _State) -> None:
         f"and the align_start pose.")
 
 
+def search_rounds(io: AlignmentIO, state: _State, search: _Search, around: str,
+                  searches: Tuple[str, ...] = SEARCH_ORDER) -> bool:
+    """Scans of growing discs around pos (ACQUIRE_STAGES), the searches in turn, until light shows.
+
+    Light, confirmed at rest: True, the fiber there. A hint, confirmed at
+    rest: the new centre, and the scans start again from the smallest
+    disc around it. Dark everywhere: False, the fiber back at its centre.
+    """
+    centre = dict(state.pos)
+    stage = 0
+    while stage < len(ACQUIRE_STAGES):
+        restarted = False
+        for name in searches:
+            found = acquire_scan(io, state, search, name, ACQUIRE_STAGES[stage], around)
+            if found == "light":
+                return True
+            if found == "hint":
+                # Better than the centre: start again from here.
+                search.restarts += 1
+                centre, around = dict(state.pos), f"hint {search.restarts}"
+                stage, restarted = 0, True
+                break
+            if state.pos != centre:
+                state.pos.update(centre)
+                _goto(io, state)
+        if not restarted:
+            stage += 1
+    return False
+
+
+def full_search(io: AlignmentIO, state: _State, search: _Search) -> bool:
+    """For demos: a translation then a rotation scan over the full radius, each to its end; then the light they saw.
+
+    True once that light is confirmed at rest. False otherwise: the fiber at
+    the hint they saw, if any (a new centre), else back where it started.
+    """
+    best: Optional[Tuple[str, _Scan, Dict]] = None
+    for name in SEARCH_ORDER:
+        radius, capture, _ = _scale(state, name)
+        amplitude = _within_window(state, name, radius)
+        if amplitude <= 0:
+            continue
+        payload = _scan_payload(search, state, name, amplitude, search.info["around"])
+        io.publish("acquire", {**payload, "found": False})
+        scan = lissajous_scan(io, state, name, amplitude, capture, None)
+        if scan.best is not None and (best is None or scan.best.power_w > best[1].best.power_w):
+            best = (name, scan, payload)
+    if best is None:
+        return False
+    name, scan, payload = best
+    return _take(io, state, search, name, scan.best, scan.best_s, scan, payload) == "light"
+
+
+def acquire_scan(io: AlignmentIO, state: _State, search: _Search, name: str, fraction: float,
+                 around: str) -> Optional[str]:
+    """One Lissajous scan of the search ``name`` around pos, over ``fraction`` of its radius, until a hint of light.
+
+    Then the best it saw is confirmed at rest (``_take``). Returns "light",
+    "hint" or None, as ``_take``.
+    """
+    radius, capture, _ = _scale(state, name)
+    amplitude = _within_window(state, name, fraction * radius)
+    if amplitude <= 0:
+        return None
+    payload = _scan_payload(search, state, name, amplitude, around)
+    io.publish("acquire", {**payload, "found": False})
+    scan = lissajous_scan(io, state, name, amplitude, capture, search.hint_w())
+    if scan.trigger is not None:
+        return _take(io, state, search, name, scan.trigger, scan.trigger_s, scan, payload)
+    if scan.best is None:
+        return None
+    return _take(io, state, search, name, scan.best, scan.best_s, scan, payload)
+
+
+def _take(io: AlignmentIO, state: _State, search: _Search, name: str, sample: Sample, s_out: float, scan: _Scan,
+          payload: Dict) -> Optional[str]:
+    """What a scan's ``sample`` (read ``s_out`` along its path) is worth, at rest (``_confirm``).
+
+    "light": at least the detection level, the fiber there. "hint": at least
+    a hint (``search.hint_w``), the fiber there, the search's new centre.
+    None: less, or nothing to confirm; the fiber back where the scan was centred.
+    """
+    hint_w = search.hint_w()
+    if not sample.power_w >= hint_w:
+        return None
+    axes = SEARCH_AXES[name]
+    centre = dict(state.pos)
+    power = _confirm(io, state, name, sample, s_out, scan, _scale(state, name)[1])
+    if power >= state.detect_w:
+        state.peak_w = power
+        io.publish("acquire", {**payload, "found": True, "power_w": power,
+                               "at": [round(state.pos[axes[0]], 5), round(state.pos[axes[1]], 5)]})
+        return "light"
+    if power >= hint_w:
+        state.peak_w = search.centre_w = power
+        return "hint"
+    state.pos.update(centre)
+    _goto(io, state)
+    return None
+
+
+def _scale(state: _State, name: str) -> Tuple[float, float, str]:
+    """The search's radius, capture radius and unit: degrees for "angle", µm for "lateral"."""
+    s = state.settings
+    if name == "angle":
+        return s.acquire_radius_deg, s.acquire_capture_deg, "°"
+    return s.acquire_radius_mm * 1e3, s.acquire_capture_mm * 1e3, "µm"
+
+
+def _scan_payload(search: _Search, state: _State, name: str, amplitude: float, around: str) -> Dict:
+    """The "acquire" payload of a scan as it starts (counted in ``search.scans``)."""
+    _, capture, unit = _scale(state, name)
+    search.scans += 1
+    return {**search.info, "search": name, "radius": round(amplitude, 5), "unit": unit, "around": around,
+            "pitch": round(2 * LISSAJOUS_COVER * capture, 5), "spacing": round(LISSAJOUS_READING * capture, 5),
+            "restarts": search.restarts}
+
+
+def lissajous_path(centre: Tuple[float, float], amplitude: float, n: int, spacing: float) -> np.ndarray:
+    """Points (u, v) of u = A sin(n t), v = A sin((n + 1) t) around ``centre``, t from 0 to 2π, ``spacing`` apart along it.
+
+    It starts at the centre, crosses it again halfway (t = π) and ends there.
+    The first half covers the square ± A already, about twice as coarsely.
+    Points beyond A from the centre are brought back onto that circle (the
+    corners of the square): the path stays in the disc of radius A, at most
+    ``spacing`` between points, and covers it as well.
+    """
+    t = np.linspace(0.0, 2.0 * np.pi, max(2000, 400 * n))
+    u, v = amplitude * np.sin(n * t), amplitude * np.sin((n + 1) * t)
+    along = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(u), np.diff(v)))])
+    at = np.interp(np.arange(0.0, along[-1], spacing).tolist() + [along[-1]], along, t)
+    points = np.column_stack((amplitude * np.sin(n * at), amplitude * np.sin((n + 1) * at)))
+    r = np.hypot(points[:, 0], points[:, 1])
+    points *= np.minimum(1.0, amplitude / np.maximum(r, 1e-300))[:, None]
+    return points + np.asarray(centre, dtype=float)
+
+
+@dataclass
+class _Scan:
+    """A scan made: its path (in the search's axes), its speed, and its readings that count, with where they lie on it."""
+
+    path: np.ndarray
+    #: In the search's units per second.
+    speed: float
+    #: The best reading of the run that stopped it (None: it ran to its end), and its best reading.
+    trigger: Optional[Sample] = None
+    best: Optional[Sample] = None
+    #: How far along the path they were read (the search's units).
+    trigger_s: float = 0.0
+    best_s: float = 0.0
+
+
+def lissajous_scan(io: AlignmentIO, state: _State, name: str, amplitude: float, capture: float,
+                   trigger_w: Optional[float]) -> _Scan:
+    """A Lissajous over ± ``amplitude`` around pos, in the search's axes, read on the move.
+
+    Sized from ``capture`` (how far from the optimum light shows): it passes
+    within LISSAJOUS_COVER of it from every point, reads every
+    LISSAJOUS_READING of it, and crosses it in at least MIN_CROSSING_S. It
+    stops once HINT_READINGS readings in a row reach ``trigger_w`` (None:
+    never). A full scan ends back at pos.
+    """
+    axes = SEARCH_AXES[name]
+    n = max(2, math.ceil(LISSAJOUS_GAP * amplitude / (LISSAJOUS_COVER * capture)))
+    spacing = LISSAJOUS_READING * capture
+    path = lissajous_path((state.pos[axes[0]], state.pos[axes[1]]), amplitude, n, spacing)
+    return _run_path(io, state, name, path, _search_speed(io, name, spacing, capture), trigger_w)
+
+
+def _search_speed(io: AlignmentIO, name: str, spacing: float, capture: float) -> float:
+    """The scan speed (the search's units per second): a reading every ``spacing``, a capture diameter in MIN_CROSSING_S at least."""
+    return min(spacing / io.sample_period_s, 2.0 * capture / MIN_CROSSING_S)
+
+
+def _run_path(io: AlignmentIO, state: _State, name: str, path: np.ndarray, speed: float,
+              trigger_w: Optional[float]) -> _Scan:
+    """Move along ``path`` (from pos, in the search's axes) at ``speed``, reading all along.
+
+    Once HINT_READINGS readings in a row reach ``trigger_w`` (None: never),
+    it goes on while the light grows, and stops once it falls under
+    PAST_PEAK of its best. The scan's trigger is the best reading of that
+    run (None if it ran to its end).
+    """
+    axes = SEARCH_AXES[name]
+    kind = "ang" if name == "angle" else "cart"
+    # Scan readings, in auto range: the light may be anywhere from nothing to the peak.
+    _averaging(io, state, SCAN_AVERAGING)
+    _range(io, state, None)
+    if name == "angle":
+        _motion(io, state, acc=MOVE_MOTION["acc"], ang_vel=max(MIN_SCAN_ANG_SPEED, speed), blending=100)
+    else:
+        _motion(io, state, acc=MOVE_MOTION["acc"], lin_vel=max(MIN_SCAN_SPEED, speed * 1e-3), blending=100)
+    seen: Dict[str, Optional[Tuple[Sample, float]]] = {"best": None, "run": None, "trigger": None}
+    count = {"run": 0}
+    along = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(path, axis=0).T))])
+    track = {"i": 0}
+
+    def locate(sample: Sample) -> float:
+        # How far along the path it was read: on the segments just ahead of
+        # the reading before, not on another pass of a path that crosses itself.
+        offsets = io.local(sample.pose)
+        point = np.array([offsets[LOCAL_INDEX[axes[0]]], offsets[LOCAL_INDEX[axes[1]]]])
+        lo = max(0, track["i"] - 2)
+        a, b = path[lo:lo + TRACK_AHEAD + 3][:-1], path[lo + 1:lo + TRACK_AHEAD + 3]
+        ab = b - a
+        t = np.clip(np.einsum("ij,ij->i", point - a, ab) / np.maximum(np.einsum("ij,ij->i", ab, ab), 1e-18), 0, 1)
+        k = int(np.argmin(np.hypot(*(a + t[:, None] * ab - point).T)))
+        track["i"] = lo + k
+        return float(along[lo + k] + t[k] * (along[lo + k + 1] - along[lo + k]))
+
+    def watch(samples: List[Sample]) -> bool:
+        sample = samples[-1]
+        here = (sample, locate(sample))
+        if math.isnan(sample.power_w):
+            return False
+        if seen["best"] is None or sample.power_w > seen["best"][0].power_w:
+            seen["best"] = here
+        if trigger_w is None:
+            return False
+        # An overrange (+inf) is light too.
+        if sample.power_w >= trigger_w:
+            count["run"] += 1
+            if seen["run"] is None or sample.power_w > seen["run"][0].power_w:
+                seen["run"] = here
+        elif count["run"] < HINT_READINGS:
+            count["run"], seen["run"] = 0, None  # a blip: forget it
+        if count["run"] >= HINT_READINGS and sample.power_w < PAST_PEAK * seen["run"][0].power_w:
+            seen["trigger"] = seen["run"]
+            return True
+        return False
+
+    # The path starts where the fiber is.
+    for first in range(1, len(path), SCAN_CHUNK):
+        targets = [state.pose(io, **{axes[0]: u, axes[1]: v}) for u, v in path[first:first + SCAN_CHUNK]]
+        io.scan(targets, kind=kind, stop=watch)
+        if seen["trigger"] is not None:
+            break
+    if seen["trigger"] is None and count["run"] >= HINT_READINGS:
+        seen["trigger"] = seen["run"]  # light still growing where the path ended
+    scan = _Scan(path, speed)
+    if seen["trigger"] is not None:
+        scan.trigger, scan.trigger_s = seen["trigger"]
+    if seen["best"] is not None:
+        scan.best, scan.best_s = seen["best"]
+    return scan
+
+
+def _confirm(io: AlignmentIO, state: _State, name: str, sample: Sample, s_out: float, scan: _Scan,
+             capture: float) -> float:
+    """Back to where ``sample`` was read (``s_out`` along ``scan``'s path), the power at rest there; pos follows.
+
+    Read on the move, light may show out of step with its pose (the meter
+    lags, or the pose was read late): back at the pose of the reading, the
+    fiber may sit beside the light, which lies on the path behind or ahead.
+    Under CONFIRM_FRACTION of the reading, the scan goes back over that
+    stretch of its path (``_back_along``) to where the light is, if that
+    reads more at rest.
+    """
+    axes = SEARCH_AXES[name]
+    kind = "ang" if name == "angle" else "cart"
+    offsets = io.local(sample.pose)
+    state.pos.update({axis: offsets[LOCAL_INDEX[axis]] for axis in axes})
+    _goto(io, state)
+    power = _settled_still(io, state, kind)
+    if power >= CONFIRM_FRACTION * sample.power_w:
+        return power
+    here = dict(state.pos)
+    found = _back_along(io, state, name, s_out, scan, capture)
+    if found is not None:
+        state.pos.update({axes[0]: found[0], axes[1]: found[1]})
+        _goto(io, state)
+        again = _settled_still(io, state, kind)
+        if again > power:
+            return again
+    state.pos.update(here)
+    _goto(io, state)
+    return power
+
+
+def _back_along(io: AlignmentIO, state: _State, name: str, s_out: float, scan: _Scan,
+                capture: float) -> Optional[Tuple[float, float]]:
+    """Where along ``scan``'s path the light that a reading ``s_out`` along it showed out of step really is, or None.
+
+    Over BACK_CAPTURES capture radii of the path centred on the reading (at
+    least BACK_LAG_S of the scan either side), backwards, BACK_SLOWDOWN
+    times slower. A reading out of step by a time τ
+    (late: τ > 0, its pose reported old: τ < 0) lands a speed × τ along the
+    way it was taken: s_out = s + v τ on the way out, s_back = s - v τ / k on
+    the way back. Hence s = (s_out + k · s_back) / (1 + k), whatever τ.
+    """
+    axes = SEARCH_AXES[name]
+    path = scan.path
+    along = np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(path, axis=0).T))])
+    half = max(0.5 * BACK_CAPTURES * capture, BACK_LAG_S * scan.speed)
+    first = max(0, int(np.searchsorted(along, s_out - half)) - 1)
+    last = min(len(path), int(np.searchsorted(along, s_out + half)) + 1)
+    stretch = path[first:last][::-1]
+    if len(stretch) < 2:
+        return None
+    state.pos.update({axes[0]: float(stretch[0][0]), axes[1]: float(stretch[0][1])})
+    _goto(io, state)
+    back = _run_path(io, state, name, stretch, scan.speed / BACK_SLOWDOWN, None)
+    if back.best is None:
+        return None
+    s_back = along[last - 1] - back.best_s  # the stretch runs the path backwards from its point last - 1
+    s = (s_out + BACK_SLOWDOWN * s_back) / (1.0 + BACK_SLOWDOWN)
+    return float(np.interp(s, along, path[:, 0])), float(np.interp(s, along, path[:, 1]))
+
+
+def _within_window(state: _State, name: str, amplitude: float) -> float:
+    """``amplitude``, reduced so that a scan's disc around pos stays inside the window, its margins left."""
+    s = state.settings
+    if name == "angle":
+        room = s.range_deg - ANGLE_MARGIN_DEG - math.hypot(state.pos["rx"], state.pos["rz"])
+    else:
+        room = (s.range_mm - WINDOW_MARGIN_MM) * 1e3 - math.hypot(state.pos["x"], state.pos["z"])
+    return max(0.0, min(amplitude, room))
+
+
 def _seed(io: AlignmentIO, state: _State) -> Optional[Dict[str, float]]:
     """The pose remembered for this fiber, as pos (x, z, rx, rz), or None.
 
-    None too when the spirals around it would leave the window (align_start
+    None too when the scans around it would leave the window (align_start
     taught again far from it). Its offset along the fiber (y) is not used:
     the gap stays the one align_start taught.
     """
@@ -392,68 +756,12 @@ def _seed(io: AlignmentIO, state: _State) -> Optional[Dict[str, float]]:
 
 
 def _ring(state: _State) -> List[Tuple[float, float]]:
-    """The lateral points (x, z in µm) of the ring of tilt spirals, around the start: none if acquire_ring_um is 0."""
+    """The lateral points (x, z in µm) of the ring of rotation scans, around the start: none if acquire_ring_um is 0."""
     radius = state.settings.acquire_ring_mm * 1e3
     if radius <= 0:
         return []
     return [(radius * math.cos(2 * math.pi * k / RING_POINTS), radius * math.sin(2 * math.pi * k / RING_POINTS))
             for k in range(RING_POINTS)]
-
-
-def spiral(io: AlignmentIO, state: _State, search: str, info: Dict, full: bool = False) -> bool:
-    """A spiral in tilt ("angle": rx/rz) or in the lateral plane ("lateral": x/z) around pos, until light shows.
-
-    It stops once past the light's peak; ``full``, it runs to its radius.
-    Ends on its best reading, at rest. False if it found no light.
-    """
-    s = state.settings
-    axes = SEARCH_AXES[search]
-    if search == "angle":
-        radius, width, unit, kind = s.acquire_radius_deg, state.angle_width, "°", "ang"
-    else:
-        radius, width, unit, kind = s.acquire_radius_mm * 1e3, state.width["x"], "µm", "cart"
-    pitch = SPIRAL_PITCH_WIDTHS * width
-    spacing = pitch / SPIRAL_READINGS_PER_PITCH
-    payload = {**info, "search": search, "radius": radius, "pitch": round(pitch, 5), "unit": unit}
-    io.publish("acquire", {**payload, "found": False})
-    centre = (state.pos[axes[0]], state.pos[axes[1]])
-    path = generate_archimedean_spiral(centre, max_radius=radius, spiral_pitch=pitch, point_spacing=spacing)
-    # Scan readings, in auto range: the light may be anywhere from nothing to the peak.
-    _averaging(io, state, SCAN_AVERAGING)
-    _range(io, state, None)
-    if search == "angle":
-        _motion(io, state, acc=MOVE_MOTION["acc"], ang_vel=_scan_ang_speed(io, spacing), blending=100)
-    else:
-        _motion(io, state, acc=MOVE_MOTION["acc"], lin_vel=_scan_speed(io, spacing), blending=100)
-    found: Dict[str, Optional[Sample]] = {"best": None}
-    stopped = {"done": False}
-
-    def past_peak(samples: List[Sample]) -> bool:
-        sample = samples[-1]
-        # An overrange (+inf) is light too.
-        if sample.power_w >= state.detect_w and (found["best"] is None or sample.power_w > found["best"].power_w):
-            found["best"] = sample
-        stopped["done"] = (not full and found["best"] is not None
-                           and sample.power_w < PAST_PEAK * found["best"].power_w)
-        return stopped["done"]
-
-    # The path starts where the fiber is.
-    for first in range(1, len(path), SPIRAL_CHUNK):
-        targets = [state.pose(io, **{axes[0]: u, axes[1]: v}) for u, v in path[first:first + SPIRAL_CHUNK]]
-        io.scan(targets, kind=kind, stop=past_peak)
-        if stopped["done"]:
-            break
-    best = found["best"]
-    if best is None:
-        return False
-    offsets = io.local(best.pose)
-    state.pos.update({axis: offsets[LOCAL_INDEX[axis]] for axis in axes})
-    _goto(io, state)
-    state.peak_w = _still(io, state, kind)
-    io.publish("acquire", {**payload, "found": True,
-                           "at": [round(state.pos[axes[0]], 5), round(state.pos[axes[1]], 5)],
-                           "power_w": state.peak_w})
-    return True
 
 
 # --- Center --------------------------------------------------------------------------------
@@ -897,6 +1205,15 @@ def _still(io: AlignmentIO, state: _State, kind: str) -> float:
     if math.isinf(power):
         _range(io, state, None)
         power = io.read_still(kind)
+    return power
+
+
+def _settled_still(io: AlignmentIO, state: _State, kind: str) -> float:
+    """A reading at rest (``_still``); under the detection level, read again for up to RANGE_SETTLE_S, the highest kept."""
+    power = _still(io, state, kind)
+    until = io.elapsed_s() + RANGE_SETTLE_S
+    while power < state.detect_w and io.elapsed_s() < until:
+        power = max(power, _still(io, state, kind))
     return power
 
 

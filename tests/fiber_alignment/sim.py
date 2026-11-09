@@ -22,6 +22,7 @@ everything a test needs.
 
 from __future__ import annotations
 
+import bisect
 import math
 import random
 from collections import deque
@@ -49,6 +50,8 @@ FRESNEL = 0.93
 BEAM_WIDTH_UM = 240.0
 BEAM_ANGLE_DEG = 0.3
 BEAM_GAP_UM = 10000.0
+#: The meter's response time in its higher ranges (s), with FakeMeter.tau_s set.
+FAST_TAU_S = 0.002
 
 
 class SimClock:
@@ -93,9 +96,14 @@ class FakeRobot:
     accelerations are ignored.
     """
 
-    def __init__(self, clock: SimClock, start: Sequence[float] = START_POSE, pose_query_s: float = 0.001):
+    def __init__(self, clock: SimClock, start: Sequence[float] = START_POSE, pose_query_s: float = 0.001,
+                 pose_delay_s: float = 0.0):
         self.clock = clock
         self.pose_query_s = pose_query_s
+        #: How old the poses it reports are (s): its real-time data, late.
+        self.pose_delay_s = pose_delay_s
+        self._times: List[float] = []
+        self._poses: List[Tuple[float, ...]] = []
         self._pose = tuple(float(v) for v in start)
         self._queue: deque = deque()
         self._paused = False
@@ -172,7 +180,7 @@ class FakeRobot:
         # The robot answers halfway through the query.
         self.clock.advance(self.pose_query_s / 2)
         self._advance()
-        pose = list(self._pose)
+        pose = list(self._reported())
         self.clock.advance(self.pose_query_s / 2)
         return pose
 
@@ -236,8 +244,27 @@ class FakeRobot:
             return
 
     def _passed(self) -> None:
+        if self.pose_delay_s > 0:
+            self._times.append(self.clock.now)
+            self._poses.append(self._pose)
+            if len(self._times) > 20000:
+                del self._times[:10000], self._poses[:10000]
         if self.on_pose is not None:
             self.on_pose(self._pose)
+
+    def _reported(self) -> Tuple[float, ...]:
+        """The pose it reports: its pose pose_delay_s ago (interpolated between those it passed), else now."""
+        if self.pose_delay_s <= 0 or not self._times:
+            return self._pose
+        t = self.clock.now - self.pose_delay_s
+        k = bisect.bisect_right(self._times, t)
+        if k == 0:
+            return self._poses[0]
+        if k == len(self._times):
+            return self._pose if t >= self._times[-1] and self._segment is None else self._poses[-1]
+        (t0, p0), (t1, p1) = (self._times[k - 1], self._poses[k - 1]), (self._times[k], self._poses[k])
+        f = (t - t0) / (t1 - t0) if t1 > t0 else 0.0
+        return tuple(x + f * (alignment._wrap_deg(y - x) if i >= 3 else y - x) for i, (x, y) in enumerate(zip(p0, p1)))
 
 
 @dataclass
@@ -266,6 +293,10 @@ class Optics:
     source_w: float = 1e-3
     pivot_um: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     start: Tuple[float, ...] = START_POSE
+    #: "beam" optics only: faint wide wings around the core, as on the cell in
+    #: November 2026: (amplitude, against the core's peak; 1/e² radius, µm;
+    #: 1/e tilt half-width, °). None: a pure Gaussian.
+    wing: Optional[Tuple[float, float, float]] = None
 
     def __post_init__(self) -> None:
         dx, dz, drx, drz = self.offset
@@ -297,8 +328,12 @@ class Optics:
         x_land = x - gap * math.sin(math.radians(rz))
         z_land = z + gap * math.sin(math.radians(rx))
         if self.model == "beam":
-            return (FRESNEL * math.exp(-2.0 * (x_land ** 2 + z_land ** 2) / self.width_um ** 2)
-                    * math.exp(-(rx ** 2 + rz ** 2) / self.angle_deg ** 2))
+            r2, t2 = x_land ** 2 + z_land ** 2, rx ** 2 + rz ** 2
+            core = math.exp(-2.0 * r2 / self.width_um ** 2 - t2 / self.angle_deg ** 2)
+            if self.wing is None:
+                return FRESNEL * core
+            amplitude, width, angle = self.wing
+            return FRESNEL * (core + amplitude * math.exp(-2.0 * r2 / width ** 2 - t2 / angle ** 2))
         z_r = math.pi * MODE_RADIUS_UM ** 2 / WAVELENGTH_UM
         width_sq = MODE_RADIUS_UM ** 2 * (2.0 + (gap / z_r) ** 2)
         gap_loss = 1.0 / (1.0 + (gap / (2.0 * z_r)) ** 2)
@@ -334,11 +369,25 @@ class FakeMeter:
     averages the power at the robot's pose over that time, so it lags and
     smears during a scan. Noise: ``noise_w`` plus ``noise_rel`` of the power.
     A fixed range reads +inf above it; auto range switches with a delay.
+
+    ``tau_s``: the meter's own response time (first order) while it shows
+    less than ``tau_below_w``, as in its low-power ranges on the cell (above
+    it, ``FAST_TAU_S``). A reading taken on the move then shows the power of
+    a pose already left behind: on a narrow beam, going back to the pose of
+    the best reading can land beside the light. ``background_w``: stray
+    light, read everywhere.
+
+    ``range_up_s``: in auto range, how long the power must stay over the
+    range before the meter switches up; until then it reads the range's
+    top. Its lowest range is ``lowest_range_w``. On the cell (2026-11-06,
+    ~0.1 nW of stray light, so the meter sat in its lowest range), scans
+    crossing µW of light read 50-100 nW on the move.
     """
 
     def __init__(self, clock: SimClock, robot: FakeRobot, optics: Optics, *, dark: bool = False,
                  latency_s: float = 0.0015, sample_s: float = 0.003, noise_w: float = 0.5e-9,
-                 noise_rel: float = 1e-3, seed: int = 0):
+                 noise_rel: float = 1e-3, seed: int = 0, tau_s: float = 0.0, tau_below_w: float = math.inf,
+                 background_w: float = 0.0, range_up_s: float = 0.0, lowest_range_w: float = 1.2e-8):
         self.clock = clock
         self.robot = robot
         self.optics = optics
@@ -352,8 +401,15 @@ class FakeMeter:
         self.power_range = 1.2e-3
         self.power_unit = "W"
         self.reads = 0
+        self.tau_s = tau_s
+        self.tau_below_w = tau_below_w
+        self.background_w = background_w
+        self.range_up_s = range_up_s
+        self.lowest_range_w = lowest_range_w
+        self._over_since: Optional[float] = None  # since when the power is over the auto range, with range_up_s
         self._rng = random.Random(seed)
         self._auto_top = 1.2e-3
+        self._seen: Optional[Tuple[float, float]] = None  # (time, power the meter shows), with tau_s
 
     def read_power(self) -> float:
         self.reads += 1
@@ -368,12 +424,18 @@ class FakeMeter:
         power = total / steps
         power += self._rng.gauss(0.0, self.noise_w + self.noise_rel * power)
         if self.auto_range:
-            # Up as soon as the power exceeds the range, down only under a
-            # hundredth of it, like the meter; each switch costs a few ms.
+            # Up once the power exceeds the range (for range_up_s), down only
+            # under a hundredth of it, like the meter; each switch costs a few ms.
             top = self._auto_top
+            if power > top and self.range_up_s > 0:
+                if self._over_since is None:
+                    self._over_since = self.clock.now
+                if self.clock.now - self._over_since < self.range_up_s:
+                    return top
+            self._over_since = None
             while power > top:
                 top *= 10.0
-            while power < top / 100.0 and top > 1.2e-8:
+            while power < top / 100.0 and top > self.lowest_range_w:
                 top /= 10.0
             if top != self._auto_top:
                 self.clock.advance(0.005)
@@ -385,9 +447,17 @@ class FakeMeter:
         return round(power / self.power_range * 16384) / 16384 * self.power_range
 
     def _power_now(self) -> float:
-        if self.dark:
-            return 0.0
-        return self.optics.source_w * self.optics.coupling(self.robot.pose)
+        power = self.background_w + (0.0 if self.dark else self.optics.source_w * self.optics.coupling(self.robot.pose))
+        if self.tau_s <= 0:
+            return power
+        # First order: the shown power moves towards the true one, slowly in the low ranges.
+        now = self.clock.now
+        if self._seen is not None:
+            t, shown = self._seen
+            tau = self.tau_s if shown < self.tau_below_w else FAST_TAU_S
+            power = shown + (power - shown) * (1.0 - math.exp(-max(0.0, now - t) / tau))
+        self._seen = (now, power)
+        return power
 
 
 class FakeContext:
@@ -459,6 +529,20 @@ class Scenario:
     #: "beam" (the cell's collimated ends) or "smf" (bare single-mode fibers, see SMF).
     optics: str = "beam"
     gap_um: Optional[float] = None
+    #: The beam's 1/e² radius (µm) and 1/e tilt half-width (°), "beam" optics; None: the module's defaults.
+    width_um: Optional[float] = None
+    angle_deg: Optional[float] = None
+    #: Faint wide wings around the beam's core: see Optics.wing.
+    wing: Optional[Tuple[float, float, float]] = None
+    #: How old the robot's reported poses are (s): see FakeRobot.pose_delay_s.
+    pose_delay_s: float = 0.0
+    #: The meter's response time (s) under meter_tau_below_w, and stray light (W): see FakeMeter.
+    meter_tau_s: float = 0.0
+    meter_tau_below_w: float = math.inf
+    background_w: float = 0.0
+    #: How long the meter takes to switch up out of a range, and its lowest range (W): see FakeMeter.
+    meter_range_up_s: float = 0.0
+    meter_lowest_range_w: float = 1.2e-8
     pivot_um: Tuple[float, float, float] = (0.0, 0.0, 0.0)
     dark: bool = False
     latency_s: float = 0.0015
@@ -495,11 +579,16 @@ def simulate(scenario: Scenario, align=None, phases=None, phase_views=None) -> R
     clock = SimClock()
     smf = scenario.optics == "smf"
     gap = scenario.gap_um if scenario.gap_um is not None else (SMF["gap_um"] if smf else BEAM_GAP_UM)
-    optics = Optics(offset=scenario.offset, model=scenario.optics, gap_um=gap, pivot_um=scenario.pivot_um)
-    robot = FakeRobot(clock, pose_query_s=scenario.pose_query_s)
+    shape = {k: v for k, v in (("width_um", scenario.width_um), ("angle_deg", scenario.angle_deg),
+                                ("wing", scenario.wing)) if v is not None}
+    optics = Optics(offset=scenario.offset, model=scenario.optics, gap_um=gap, pivot_um=scenario.pivot_um, **shape)
+    robot = FakeRobot(clock, pose_query_s=scenario.pose_query_s, pose_delay_s=scenario.pose_delay_s)
     meter = FakeMeter(clock, robot, optics, dark=scenario.dark, latency_s=scenario.latency_s,
                       sample_s=scenario.sample_s, noise_w=0.5e-9 if scenario.noise else 0.0,
-                      noise_rel=1e-3 if scenario.noise else 0.0, seed=scenario.seed)
+                      noise_rel=1e-3 if scenario.noise else 0.0, seed=scenario.seed,
+                      tau_s=scenario.meter_tau_s, tau_below_w=scenario.meter_tau_below_w,
+                      background_w=scenario.background_w, range_up_s=scenario.meter_range_up_s,
+                      lowest_range_w=scenario.meter_lowest_range_w)
     context = FakeContext(clock, {**DEFAULT_PARAMS, **(SMF["params"] if smf else {}), **scenario.params})
 
     def check_gap(pose):

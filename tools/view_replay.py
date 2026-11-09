@@ -148,9 +148,12 @@ class Replay:
             time.sleep(1.0 / POWER_RATE_HZ)
 
     def _acquire_map_points(self) -> int:
+        # As the page does (renderMap): from the start of the latest scan of the latest search.
         acquire = self.run.context.published("align_acquire")
         search = acquire[-1].get("search") if acquire else None
-        since = min(a["t"] for a in acquire if a.get("search") == search) if search else -math.inf
+        runs = [a for a in acquire if a.get("search") == search] if search else []
+        begun = [a for a in runs if not a.get("found")]
+        since = begun[-1]["t"] if begun else min((a["t"] for a in runs), default=-math.inf)
         return sum(1 for row in self.run.rows if row[9] >= since)
 
     def status(self) -> dict:
@@ -255,7 +258,7 @@ def make_handler(replay: Replay):
 
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    # Default: the cell's optics, no light at the start until the tilt spiral finds it.
+    # Default: the cell's optics, no light at the start until a rotation scan finds it.
     parser.add_argument("--offset", type=float, nargs=4, default=(40.0, 30.0, 1.2, -0.4),
                         metavar=("X", "Z", "RX", "RZ"), help="optimum from the start: µm, µm, °, °")
     parser.add_argument("--pivot", type=float, nargs=3, default=(0.0, 0.0, 0.0), metavar=("X", "Y", "Z"),

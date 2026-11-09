@@ -26,15 +26,19 @@ algorithm.py; app_logic/tests/fiber_alignment/test_contract.py checks it):
     ``still`` true for a reading taken at rest.
   - ``align_acquire``: the search for light: ``noise_w``, ``detect_w`` (the
     level counted as light), ``warm`` (light at the start: no search, unless
-    ``full``), ``full`` (acquire_full_search: both spirals run to their full
-    radius), ``found``, and ``search``: null after a warm start, else "angle"
-    (a spiral in rx/rz) or "lateral" (a spiral in x/z), published as each
-    spiral starts and as it ends on the light, with its ``radius``, ``pitch``
-    and ``unit`` (° or µm), and once found ``at`` (the spiral's two axes) and
-    ``power_w``. ``around``: where the search is centred, "remembered pose"
-    (where this fiber aligned last), "start", or "ring k/n" (the tilt spirals
-    around the start, when both spirals found nothing). A search may run
-    several times: the map shows its latest run.
+    ``full``), ``full`` (acquire_full_search: a translation then a rotation
+    scan run over their full disc first), ``found``, and ``search``: null
+    after a warm start, else "angle" (a Lissajous scan in rx/rz) or
+    "lateral" (one in x/z), published as each scan starts and as it ends on
+    light confirmed at rest, with ``pattern`` ("lissajous"), ``radius`` (how
+    far it reaches from its centre), ``pitch`` (its line spacing), ``spacing`` (between
+    readings), ``unit`` (° or µm) and ``restarts`` (hints of light the search
+    restarted from so far), and once found ``at`` (the scan's two axes) and
+    ``power_w``. ``around``: where the scan is centred, "remembered pose"
+    (where this fiber aligned last), "start", "hint k" (the k-th hint of
+    light), or "ring k/n" (the rotation scans around the start, when all the
+    scans found nothing). A search runs several times: the map shows its
+    latest scan.
   - ``align_profile``: one per 1-D scan. ``axis`` (x, z, rx or rz), ``unit``
     (µm or °), ``iteration``, ``rescan``, ``span`` [lo, hi], ``passes``
     [{``dir`` 1 or -1, ``points`` [[coord, power_w], ...]}], ``fit`` (null,

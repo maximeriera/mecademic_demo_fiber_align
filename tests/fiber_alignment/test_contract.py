@@ -24,11 +24,11 @@ KINDS = {"cart", "ang", None}
 VIEW_KEYS = {"type", "axes", "slots", "search_axes", "until_end"}
 
 
-#: Cold starts: one found by the tilt spiral, one by the lateral spiral after
+#: Cold starts: one found by a rotation scan, one by translation scans after
 #: it; and a full search (acquire_full_search) with light at the start.
 SCENARIOS = {
     "angle": Scenario(offset=(40, 30, 1.2, -0.4), seed=11),
-    "lateral": Scenario(offset=(600, 0, 0.1, 0.0), seed=12, params={"acquire_radius_um": 800.0}),
+    "lateral": Scenario(offset=(700, -550, 0.1, 0.0), seed=12, params={"acquire_radius_um": 900.0}),
     "full": Scenario(offset=(50, 0, 0.45, 0.0), seed=13, params={"acquire_full_search": True}),
 }
 
@@ -113,24 +113,23 @@ def test_still_readings_and_payloads_survive_into_the_summary(run):
     assert summary["phase_views"] == algorithm.PHASE_VIEWS
 
 
-def spirals(run):
-    """For each spiral the run made: its axes' indices in a row, its reading spacing, and its readings."""
+def search_scans(run):
+    """Each scan of the first-light search: its axes' indices in a row, its reading spacing, and its readings."""
     acquire = run.context.published("align_acquire")
     rows = [r for r in run.rows if r[8] == algorithm.PHASES.index("Acquire") and not r[10]]
-    for search in dict.fromkeys(a["search"] for a in acquire if a["search"]):
-        payloads = [a for a in acquire if a["search"] == search]
-        t0 = payloads[0]["t"]
-        t1 = min([a["t"] for a in acquire if a["t"] > t0 and a["search"] != search], default=math.inf)
-        axes = [algorithm.LOCAL_INDEX[a] for a in algorithm.SEARCH_AXES[search]]
-        spacing = payloads[0]["pitch"] / algorithm.SPIRAL_READINGS_PER_PITCH
-        readings = np.array([[r[axes[0]], r[axes[1]]] for r in rows if t0 <= r[9] < t1])
-        yield search, axes, spacing, readings
+    for k, a in enumerate(acquire):
+        if not a["search"] or a["found"]:
+            continue
+        t1 = acquire[k + 1]["t"] if k + 1 < len(acquire) else math.inf
+        axes = [algorithm.LOCAL_INDEX[x] for x in algorithm.SEARCH_AXES[a["search"]]]
+        readings = np.array([[r[axes[0]], r[axes[1]]] for r in rows if a["t"] <= r[9] < t1])
+        yield a["search"], axes, a["spacing"], readings
 
 
-def test_plotted_spiral_readings_lie_on_the_commanded_path(run):
-    # Rule: what the view plots is where the robot was. Spiral readings are
-    # interpolated between poses: they must sit on the spiral the robot ran,
-    # in the axes the card plots it over (tilts for the tilt spiral).
+def test_plotted_search_readings_lie_on_the_commanded_path(run):
+    # Rule: what the view plots is where the robot was. Scan readings are
+    # interpolated between poses: they must sit on the path the robot ran,
+    # in the scan's own axes (tilts for a rotation scan).
     inverse = np.linalg.inv(frames.pose_matrix(START_POSE))
     local = []
     for m in run.robot.moves:
@@ -138,28 +137,33 @@ def test_plotted_spiral_readings_lie_on_the_commanded_path(run):
         local.append([*(position * 1000.0), *angles])
     local = np.array(local)
     checked = 0
-    for search, axes, spacing, readings in spirals(run):
+    for search, axes, spacing, readings in search_scans(run):
         if len(readings) < 20:
             continue
         path = local[:, axes]
         a, b = path[:-1], path[1:]
         ab = b - a
+        # The sharpest turn of the scans' paths: between consecutive short
+        # segments (waypoints about a reading apart; long ones are moves).
+        lengths = np.linalg.norm(ab, axis=1)
+        short = (lengths > 1e-9) & (lengths < 2 * spacing)
+        turns = [math.acos(float(np.clip(np.dot(ab[i], ab[i + 1]) / (lengths[i] * lengths[i + 1]), -1, 1)))
+                 for i in range(len(ab) - 1) if short[i] and short[i + 1]]
+        sharpest = max(turns, default=0.0)
         distances = []
         for chunk in np.array_split(readings, max(1, len(readings) // 200)):
             ap = chunk[:, None, :] - a[None, :, :]
             t = np.clip(np.einsum("nmk,mk->nm", ap, ab) / np.maximum(np.einsum("mk,mk->m", ab, ab), 1e-12), 0, 1)
             distances.extend(np.linalg.norm(ap - t[..., None] * ab[None, :, :], axis=2).min(axis=1))
         # A reading's pose lies on the chord between the poses read around
-        # it, a reading apart: across a corner of the spiral's polyline, the
-        # chord cuts it by up to spacing² / (2 radius).
-        radius = np.hypot(readings[:, 0], readings[:, 1])
-        allowed = 0.05 * spacing + spacing ** 2 / (2 * np.maximum(radius, spacing))
-        excess = np.array(distances) - allowed
-        worst = int(np.argmax(excess))
-        assert excess[worst] <= 0, (f"a {search} spiral reading {radius[worst]:.3g} from the start is "
-                                    f"{distances[worst]:.3g} off the commanded path (allowed {allowed[worst]:.3g})")
+        # it, a reading apart: across corners of the path, turning by up to
+        # `sharpest`, that chord cuts them by up to a spacing × sin(sharpest / 2).
+        allowed = 0.05 * spacing + spacing * math.sin(min(sharpest, math.pi) / 2)
+        worst = int(np.argmax(distances))
+        assert distances[worst] <= allowed, (f"a {search} scan reading at {readings[worst].round(4).tolist()} is "
+                                             f"{distances[worst]:.3g} off the commanded path (allowed {allowed:.3g})")
         checked += 1
-    assert checked, "no spiral to check"
+    assert checked, "no scan to check"
 
 
 def test_the_result_matches_the_verdict_event(run):

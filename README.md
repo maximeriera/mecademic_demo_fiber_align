@@ -172,16 +172,19 @@ no light reaching the meter, as long as the optimum is within
 `acquire_radius_deg` in tilt and about `acquire_ring_um` laterally. It never
 moves the fiber along its axis: the gap stays the taught one.
 
-Every scale (scan spans, steps, spiral pitches) follows how wide the coupling
-is: `lateral_width_um` (the 1/e² radius against a lateral offset) and
-`angle_width_deg` (the 1/e half-width against a tilt) are starting guesses,
-and each fit re-measures them. The cell's collimated ends tolerate a few
+Every scale of the later phases (scan spans, steps) follows how wide the
+coupling is: `lateral_width_um` (the 1/e² radius against a lateral offset)
+and `angle_width_deg` (the 1/e half-width against a tilt) are starting
+guesses, and each fit re-measures them. The first-light scans are sized
+instead from how far light shows from the optimum (`acquire_capture_um`,
+`acquire_capture_deg`): on the cell, the beam's faint wings carry light
+about 5 times further than its 75 µm, 0.075° core. The cell's collimated ends tolerate a few
 hundred µm laterally but a few tenths of a degree in tilt: first light is
 mostly a matter of angle. Four phases:
 
 | Phase | What it does |
 |---|---|
-| Acquire | Starts at the fiber's remembered pose, if any. Measures the noise floor. Any light there (above `signal_detect_uw`, 5 nW, and the noise) goes straight to Center. Otherwise a spiral in tilt (Rx/Rz, out to `acquire_radius_deg`), then, still dark, a lateral spiral (out to `acquire_radius_um`), each stopping once past the light; dark at the remembered pose, the same around the start. Still dark, tilt spirals at 6 points `acquire_ring_um` around the start: a picked fiber is often off in tilt and sideways at once, which neither spiral alone finds. Then to the best reading. Still no light stops the alignment with "check the laser, the fibers and the align_start pose". With `acquire_full_search` (for demos), the first two spirals run to their full radius, even with light at the start. |
+| Acquire | Starts at the fiber's remembered pose, if any. Measures the noise floor. Any light there (above `signal_detect_uw` and the noise) goes straight to Center. Otherwise Lissajous scans around it: a translation (X/Z), then a rotation (Rx/Rz), over a disc of 1/3, then 2/3, then all of `acquire_radius_um` / `acquire_radius_deg` (the Lissajous's corners brought back onto its circle). A hint of light (3× the centre's power, even far under the detection level: on the move, the meter can read µW of light as 50-100 nW), confirmed at rest, becomes the new centre and the scans start again around it. Light at the detection level ends the search, once confirmed at rest: back at the pose of a reading taken on the move, a fiber that misses the light (the meter lagging, or poses read late) finds it again going back over that stretch of the scan, 3× slower, so Center always starts on light. Dark at the remembered pose, the same around the start; still dark, rotation scans at 6 points `acquire_ring_um` around the start. Still no light stops the alignment with "check the laser, the fibers and the align_start pose". With `acquire_full_search` (for demos), a translation then a rotation scan over the full radius run to their end first. |
 | Center | Scans across the light along X then Z, both ways, fits each scan with a Gaussian over the noise floor and moves to its centre, until the centre stops moving. A window that misses the centre moves towards it by half its span at most; failing that, the fiber goes to the best reading, never to an extrapolated centre. A window without light widens. The meter's range is fixed during a scan, at 10× the power expected, so faint first light stays visible. |
 | Angle | For Rx then Rz: tilts stepping away from the current one (half an angle width at first) while the power rises, each re-centred along the lateral axis the tilt walks the beam on; a parabola through the best tilt and its neighbours picks the tilt. A tilt without light is a reading of no power, not an error. Again with half the step while it gains. |
 | Peak | First the gradient circles of the cell's first script: rounds of a circle in X/Z, then one in Rx/Rz (0.15 width radius: ~36 µm, ~0.03°), read on the move both ways. A plane fitted to the log power over each gives the slope, and a step up it, sized from the slope and the width (at most 0.5 width). The steps shrink by half after one overshoots, and a step under twice its noise is not taken. The tilt circle carries X/Z along by the walk Angle measured, so the beam stays centred. They stop once no step is taken, or after `gradient_rounds` (8); usually 1 to 4 rounds of ~2.5 s on the cell (~1 s simulated). Kept only if the power at rest is not lower. Then readings at rest on a square pattern of ±0.2 lateral width around the centre (~±50 µm on the cell's ends), `peak_grid` per side (5 by default: 25 readings, ~2.5 s), a quadratic fit of the log power and a step to its top (at most the pattern's radius), until the steps are small. Ends on the best reading taken at rest. |
@@ -190,12 +193,17 @@ Each reading is paired with the robot's pose at the middle of the meter's
 reading (interpolated between the poses read before and after it), so fast
 scans place their readings where they were taken. Scan speeds come from the
 measured time per reading. In simulation, with optics like the cell's, the
-alignment of 2026-10-27 (~80 µW at the start) takes about 20 s, and a cold
-start needing the tilt or the lateral spiral about 20–22 s. A full search
-adds about 2 s; a 3×3 Peak pattern (`peak_grid` 3) saves about 1.5 s. With
-0.2° / 240 µm optics and the `context.yaml` defaults, light is found from
-starts up to 900 µm and 2.5° off at once (48 of 48 tested); those needing
-the ring take 30–46 s in all. From the remembered pose, about 12 s. The
+alignment of 2026-10-27 (~80 µW at the start) takes about 19 s, and a cold
+start needing a rotation or a translation scan about 21–23 s. A full search
+adds about 8–10 s; a 3×3 Peak pattern (`peak_grid` 3) saves about 1.5 s.
+With 0.2° / 240 µm optics and the `context.yaml` defaults (full search on),
+light is found from starts up to 600 µm and 2.5° off at once (36 of 36
+tested), in 68–118 s: the full search's rotation scan over ±3° alone takes
+about a minute. At 900 µm, beyond the 400 µm ring, 5 of 12. On the cell's
+own starts of 2026-11-05/06 (its params, beams fitted to its runs), the
+light is found every time: Acquire takes 1.4 s (median; 23 s at most), and
+still finds it with robot poses read 60 ms late, where the old spiral lost
+88 runs in 100 in Center. From the remembered pose, about 12 s. The
 gradient circles add ~1 s when Angle has already found the top (one round:
 ~2.5 s on the cell); started
 0.1–0.15° off in tilt, Peak still ends within 0.1 % of the best (0.57–0.78
@@ -219,13 +227,13 @@ screens.
   outlined in yellow. Positions are offsets from the alignment start in the
   tool frame, the axes the algorithm moves along (X/Z lateral in µm, Rx/Rz
   in °).
-  - Acquire: a 3D landscape of the power along the latest search spiral,
-    over X/Z whichever spiral ran (the readings at the start when light was
-    already there). A tilt spiral stays at one X/Z spot, so it shows as a
+  - Acquire: a 3D landscape of the power along the latest search scan,
+    over X/Z whichever scan ran (the readings at the start when light was
+    already there). A rotation scan stays at one X/Z spot, so it shows as a
     column of readings there until the later phases spread out. Until light is found it is
     scaled to the level counted as light, marked "light" on the colour bar.
-    Its line says where the spiral is centred unless at the start
-    ("remembered pose", "ring 3/6"), and reads "full search · …" when
+    Its line says where the scan is centred unless at the start
+    ("remembered pose", "hint 1", "ring 3/6"), and reads "full search · …" when
     `acquire_full_search` is on. It keeps filling
     through the later phases, over the same axes, with the best power seen at
     each spot: the landscape rises to the final peak.

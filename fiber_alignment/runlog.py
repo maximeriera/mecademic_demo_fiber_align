@@ -16,7 +16,9 @@ Columns:
 * ``start_power_w``: the power where the search started (median of its first
   readings); ``acquire_found``; ``acquire_how``: the search that found the
   light and where it was centred ("warm @ start", "angle @ ring 3/6", ...);
-  ``acquire_trail``: every search run, "+" on the one that found it.
+  ``acquire_trail``: every search run, "+" on the one that found it;
+  ``acquire_scans``: the Lissajous scans it took; ``acquire_restarts``: how
+  often a hint of light made it start again around it.
 * Per phase (``acquire``, ``center``, ``angle``, ``peak``): ``_status`` (done,
   failed, timed out, not run, ...), ``_s`` (duration) and ``_best_mw`` (the
   best reading so far when the phase ended); ``peak_circles`` and
@@ -50,7 +52,7 @@ DEFAULT_PATH = "alignment/align_only_runs.csv"
 COLUMNS: List[str] = (
     ["time", "run", "fiber", "use_remembered_pose", "threshold_mw",
      "offset_x_um", "offset_z_um", "offset_rx_deg", "offset_rz_deg",
-     "start_power_w", "acquire_found", "acquire_how", "acquire_trail"]
+     "start_power_w", "acquire_found", "acquire_how", "acquire_trail", "acquire_scans", "acquire_restarts"]
     + [f"{p.lower()}_{k}" for p in PHASES for k in ("status", "s", "best_mw")]
     + ["peak_circles", "peak_iterations",
        "passed", "power_mw", "duration_s", "reads", "timed_out",
@@ -98,6 +100,8 @@ def make_row(context: AppContext, offset: Optional[Sequence[float]], summary: Di
         "acquire_found": bool(found),
         "acquire_how": _how(found[0]) if found else "",
         "acquire_trail": " ".join(_how(a) + ("+" if a.get("found") else "") for a in acquire),
+        "acquire_scans": sum(1 for a in acquire if a.get("search") and not a.get("found")),
+        "acquire_restarts": max((a.get("restarts", 0) for a in acquire), default=0),
         "peak_circles": len(published.get("gradient") or []),
         "peak_iterations": len(published.get("peak") or []),
         "passed": bool(summary.get("passed")),

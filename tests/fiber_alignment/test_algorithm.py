@@ -19,14 +19,18 @@ CASES = {
     # The cell's run of 2026-10-27 (~80 µW at the start), which failed in the Angle phase.
     "cell-run": Scenario(offset=(50, 0, 0.45, 0.0)),
     "few-uW": Scenario(offset=(90, -40, 0.5, -0.35), seed=2),
-    # No light at the start, the tilt off: the tilt spiral finds it.
+    # No light at the start, the tilt off: a rotation scan finds it.
     "angle-off": Scenario(offset=(40, 30, 1.2, -0.4), seed=3),
-    # No light at the start, the tilt right but 600 µm off: the lateral spiral finds it.
+    # No light at the start, the tilt right but 600 µm off: a translation scan finds it.
     "lateral-off": Scenario(offset=(600, 0, 0.1, 0.0), seed=4, params={"acquire_radius_um": 800.0}),
     "slow-io": Scenario(offset=(80, 40, 0.3, 0.2), latency_s=0.004, pose_query_s=0.003, seed=7),
     # Bare single-mode fibers: the same algorithm, other widths.
     "smf-near": Scenario(optics="smf", offset=(120, -80, 0.8, -0.5)),
-    "smf-far": Scenario(optics="smf", offset=(300, 250, 1.5, 1.0), seed=3),
+    # 390 µm off, 26 capture radii of these fibers: only the last, 500 µm disc
+    # of the search reaches it, a Lissajous ~155 mm long (it covers its whole
+    # disc evenly, where a spiral would stop on its way out: 71 s in all), at
+    # 0.2 mm/s (a 30 µm capture diameter in MIN_CROSSING_S): ~455 s.
+    "smf-far": Scenario(optics="smf", offset=(300, 250, 1.5, 1.0), seed=3, params={"align_timeout_s": 600.0}),
     "smf-tcp-behind-tip": Scenario(optics="smf", offset=(80, 60, 1.0, -1.0), pivot_um=(0, 500, 0), seed=5),
 }
 
@@ -36,11 +40,15 @@ def run(request):
     return simulate(CASES[request.param])
 
 
-def test_it_reaches_the_peak(run):
+#: Cases slower than 120 s, and how slow (s).
+SLOW = {"smf-far": 500.0}
+
+
+def test_it_reaches_the_peak(run, request):
     assert run.error is None, run.error
     assert run.result.passed
     assert run.result.power_w >= 0.97 * run.optics.best_power_w()
-    assert run.result.duration_s < 120
+    assert run.result.duration_s < SLOW.get(request.node.callspec.params["run"], 120.0)
 
 
 def test_it_never_moves_along_the_fiber(run):
@@ -72,82 +80,174 @@ def test_light_at_the_start_skips_the_searches():
         assert len(readings) == algorithm.NOISE_READS
 
 
-def test_no_light_tilts_first_then_moves():
+def test_no_light_moves_first_then_tilts():
+    # Translation first: a scan in x/z, then one in Rx/Rz, around the start.
+    # Off in tilt, the rotation scan finds the light, or a hint of it that
+    # the scans around it then turn into light; off sideways, the first
+    # translation scan.
     run = simulate(CASES["angle-off"])
     assert run.rows[0][6] < 1e-6
-    assert searches(run) == ["angle", "angle"]
+    acquire = run.context.published("align_acquire")
+    assert searches(run)[:2] == ["lateral", "angle"]
+    assert acquire[-1]["found"]
+    assert acquire[-1]["search"] == "angle" or acquire[2]["around"] == "hint 1"
     run = simulate(CASES["lateral-off"])
-    assert searches(run) == ["angle", "lateral", "lateral"]
+    assert searches(run) == ["lateral", "lateral"]
 
 
 FULL = {"acquire_full_search": True}
 
 
-def spiral_reach(run):
-    """Each spiral's search: (how far its readings went from the start, its radius, its reading spacing)."""
+def scans(run):
+    """Each scan of the first-light search: (its search, its payload, its readings on the move)."""
     acquire = run.context.published("align_acquire")
     rows = [r for r in run.rows if r[8] == algorithm.PHASES.index("Acquire") and not r[10]]
-    reach = {}
-    for search in dict.fromkeys(a["search"] for a in acquire if a["search"]):
-        payloads = [a for a in acquire if a["search"] == search]
-        u, v = (algorithm.LOCAL_INDEX[a] for a in algorithm.SEARCH_AXES[search])
-        far = max(math.hypot(r[u], r[v]) for r in rows if payloads[0]["t"] <= r[9] <= payloads[-1]["t"])
-        reach[search] = (far, payloads[0]["radius"], payloads[0]["pitch"] / algorithm.SPIRAL_READINGS_PER_PITCH)
-    return reach
+    out = []
+    for k, a in enumerate(acquire):
+        if a["search"] and not a["found"]:
+            t1 = acquire[k + 1]["t"] if k + 1 < len(acquire) else math.inf
+            out.append((a["search"], a, [r for r in rows if a["t"] <= r[9] < t1]))
+    return out
 
 
-def test_a_full_search_runs_both_spirals_to_their_radius_even_with_light_at_the_start():
+def reach(payload, readings):
+    """How far a scan's readings went from the start along the nearer of its two axes, and its spacing."""
+    u, v = (algorithm.LOCAL_INDEX[a] for a in algorithm.SEARCH_AXES[payload["search"]])
+    return min(max(abs(r[u]) for r in readings), max(abs(r[v]) for r in readings)), payload["spacing"]
+
+
+def test_a_full_search_runs_both_scans_to_their_end_even_with_light_at_the_start():
     run = simulate(Scenario(offset=CASES["cell-run"].offset, params=FULL))
     assert run.error is None, run.error
     assert run.rows[0][6] >= 1e-6, "no light at the start"
-    assert searches(run) == ["angle", "angle", "lateral", "lateral"]
-    assert all(a["full"] and a["warm"] for a in run.context.published("align_acquire"))
-    for search, (far, radius, spacing) in spiral_reach(run).items():
-        assert far >= radius - spacing, f"the {search} spiral stopped at {far:.3g} of {radius:g}"
+    acquire = run.context.published("align_acquire")
+    assert searches(run)[:2] == ["lateral", "angle"] and sum(a["found"] for a in acquire) == 1
+    assert all(a["full"] and a["warm"] for a in acquire)
+    for search, payload, readings in scans(run):
+        far, spacing = reach(payload, readings)
+        assert far >= payload["radius"] - spacing, f"the {search} scan stopped at {far:.3g} of {payload['radius']:g}"
     assert run.result.passed
     assert run.result.power_w >= 0.97 * run.optics.best_power_w()
+
+
+def test_a_full_search_ends_on_the_brightest_light_of_its_two_scans():
+    run = simulate(Scenario(offset=CASES["cell-run"].offset, params=FULL))
+    brightest = max(r[6] for _, _, readings in scans(run) for r in readings)
+    found = [a for a in run.context.published("align_acquire") if a["found"]][-1]
+    # At rest, where it was read (or found again close by).
+    assert found["power_w"] >= algorithm.CONFIRM_FRACTION * brightest
 
 
 def test_a_full_search_from_no_light_aligns_too():
     run = simulate(Scenario(offset=CASES["angle-off"].offset, seed=3, params=FULL))
     assert run.error is None, run.error
     assert run.rows[0][6] < 1e-6
-    assert searches(run) == ["angle", "angle", "lateral", "lateral"]
-    assert all(far >= radius - spacing for far, radius, spacing in spiral_reach(run).values())
+    assert searches(run)[:2] == ["lateral", "angle"]
+    for search, payload, readings in scans(run):
+        far, spacing = reach(payload, readings)
+        assert far >= payload["radius"] - spacing, f"the {search} scan stopped at {far:.3g} of {payload['radius']:g}"
     assert run.result.power_w >= 0.97 * run.optics.best_power_w()
-    # Off, the tilt spiral stops once past the light, well inside its radius.
-    far, radius, _ = spiral_reach(simulate(CASES["angle-off"]))["angle"]
-    assert far < 0.6 * radius
-    # In the dark, it still stops with the error.
+    # Not full, the rotation scan stops at the light, well before the end of
+    # its path: 0.9° off, well inside its first disc (± 0.67° and what it sees).
+    near = simulate(Scenario(offset=(40, 30, 0.9, -0.3), seed=3))
+    assert near.rows[0][6] < 1e-6
+    payload, readings = [(p, r) for search, p, r in scans(near) if search == "angle"][-1]
+    capture = payload["spacing"] / algorithm.LISSAJOUS_READING
+    n = max(2, math.ceil(algorithm.LISSAJOUS_GAP * payload["radius"] / (algorithm.LISSAJOUS_COVER * capture)))
+    path = algorithm.lissajous_path((0.0, 0.0), payload["radius"], n, payload["spacing"])
+    u, v = (algorithm.LOCAL_INDEX[a] for a in algorithm.SEARCH_AXES["angle"])
+    travelled = sum(math.hypot(b[u] - a[u], b[v] - a[v]) for a, b in zip(readings, readings[1:]))
+    assert travelled < 0.6 * sum(math.hypot(*(b - a)) for a, b in zip(path, path[1:]))
+    # In the dark, the full scans, then every size of the rounds, then the error.
     run = simulate(Scenario(dark=True, params=FULL))
     assert isinstance(run.error, AlignmentNoSignal)
-    assert searches(run) == ["angle", "lateral"]
+    assert searches(run) == ["lateral", "angle"] * (1 + len(algorithm.ACQUIRE_STAGES))
 
 
-def test_a_full_search_goes_back_to_the_light_the_lateral_spiral_missed(monkeypatch):
-    original = algorithm.spiral
+#: The cell in November 2026: a narrow core with faint wide wings (fitted to its
+#: 466 runs of Nov 5-6), a 90 µm/° walk, its params, 36 nW of stray light.
+CELL_2026_11 = dict(width_um=75.0, angle_deg=0.075, wing=(1e-2, 300.0, 0.3), gap_um=90.0 / math.radians(1.0),
+                    background_w=3.6e-8)
+CELL_2026_11_PARAMS = {"lateral_width_um": 75.0, "angle_width_deg": 0.075, "signal_detect_uw": 0.5,
+                       "acquire_capture_um": 250.0, "acquire_capture_deg": 0.3, "power_threshold_mw": 0.9}
 
-    def blind_lateral(io, state, search, info, full=False):
-        if search != "lateral":
-            return original(io, state, search, info, full)
-        detect, state.detect_w = state.detect_w, math.inf  # sees no light
-        try:
-            return original(io, state, search, info, full)
-        finally:
-            state.detect_w = detect
 
-    monkeypatch.setattr(algorithm, "spiral", blind_lateral)
-    run = simulate(Scenario(offset=CASES["cell-run"].offset, params=FULL))
+def acquire_only(scenario):
+    """The Acquire phase alone in ``scenario``: (the run, its state after Acquire)."""
+    out = {}
+
+    def probe(io, settings):
+        with io.phase("Acquire"):
+            lateral = settings.lateral_width_mm * 1e3
+            state = algorithm._State(settings, width={"x": lateral, "z": lateral}, angle_width=settings.angle_width_deg,
+                                     scan_range_w=algorithm.SCAN_RANGE * settings.source_power_w)
+            algorithm.acquire(io, state)
+            out["state"] = state
+
+    run = simulate(scenario, align=probe, phases=("Acquire",), phase_views={})
     assert run.error is None, run.error
-    assert searches(run) == ["angle", "angle", "lateral"]
-    rows = [r for r in run.rows if r[8] == algorithm.PHASES.index("Acquire")]
-    still = [r for r in rows if r[10]]
-    # The tilt spiral's best, then the same pose again once the lateral spiral is over.
-    assert len(still) == 2 and still[-1][9] > max(r[9] for r in rows if not r[10])
-    tilt = run.context.published("align_acquire")[1]["at"]
-    for r in still:
-        assert [r[3], r[5]] == pytest.approx(tilt, abs=1e-3) and math.hypot(r[0], r[2]) < 1e-3
-    assert run.result.power_w >= 0.97 * run.optics.best_power_w()
+    return run, out["state"]
+
+
+def test_a_hint_of_light_restarts_the_search_around_it():
+    # 1.2° off in tilt: the first rotation scan (± 0.67°) only reaches the
+    # faint edge of the light, under the detection level. Confirmed at rest,
+    # that hint becomes the centre, and the scans around it find the light.
+    run, state = acquire_only(Scenario(offset=(0.0, 0.0, 1.2, 0.0), params=CELL_2026_11_PARAMS, **CELL_2026_11))
+    acquire = run.context.published("align_acquire")
+    assert any(a["around"] == "hint 1" for a in acquire), [(a["search"], a["around"]) for a in acquire]
+    assert acquire[-1]["found"] and state.peak_w >= state.detect_w
+    assert acquire[-1]["restarts"] >= 1
+
+
+def test_back_beside_the_light_finds_it_again(monkeypatch):
+    # Poses reported late on the move: a reading is plotted at a pose the
+    # fiber had passed when the light reached the meter, so going back to it
+    # lands beside the light. Going back over the path around it, slower,
+    # finds it again: Acquire ends on light.
+    slow = []
+    original = algorithm._back_along
+
+    def watched(io, state, name, *args):
+        slow.append(name)
+        return original(io, state, name, *args)
+
+    monkeypatch.setattr(algorithm, "_back_along", watched)
+    run, state = acquire_only(Scenario(offset=(-60.0, 50.0, 0.55, -0.2), params=CELL_2026_11_PARAMS, pose_delay_s=0.06,
+                                       **CELL_2026_11))
+    assert slow, "the fiber never had to look again"
+    found = run.context.published("align_acquire")[-1]
+    assert found["found"] and found["power_w"] >= state.detect_w
+    # Where Acquire left the fiber, light reaches the meter at rest.
+    still = [r for r in run.rows if r[10]]
+    assert still[-1][6] >= state.detect_w
+
+
+def slow_meter(offset, range_up_s):
+    """The cell on 2026-11-06: ~0.1 nW of stray light, so the meter sits in its
+    lowest range (120 nW here) and stays there ``range_up_s`` after light
+    exceeds it, reading the range's top meanwhile."""
+    return Scenario(offset=offset, params=CELL_2026_11_PARAMS, meter_range_up_s=range_up_s, meter_lowest_range_w=1.2e-7,
+                    **{**CELL_2026_11, "background_w": 1e-10})
+
+
+def test_light_read_far_under_its_power_on_the_move_is_a_hint():
+    # On the cell, scans crossing µW read 50-100 nW: a fiftieth of the
+    # detection level is a hint, a quarter would have ignored them all.
+    run, state = acquire_only(slow_meter((-131.29, -42.02, -2.0401, 0.3002), 0.2))
+    acquire = run.context.published("align_acquire")
+    restart = next(a["t"] for a in acquire if a["around"] == "hint 1")
+    before = [r[6] for r in run.rows if not r[10] and r[9] < restart]
+    assert max(before) < 0.25 * state.detect_w, max(before)
+    assert acquire[-1]["found"] and state.peak_w >= state.detect_w
+
+
+def test_light_under_a_faintly_lit_centre_is_still_light():
+    # 180 nW at the start: a hint must beat 3× that, more than the detection
+    # level, but light at the detection level counts all the same.
+    run, state = acquire_only(slow_meter((98.41, -146.97, -0.3572, -0.3573), 0.3))
+    assert 0.1 * state.detect_w < run.rows[0][6] < state.detect_w
+    assert run.context.published("align_acquire")[-1]["found"] and state.peak_w >= state.detect_w
 
 
 def test_the_peak_pattern_spans_a_fifth_of_the_width():
@@ -197,7 +297,7 @@ def test_no_light_stops_with_a_clear_error():
     run = simulate(Scenario(dark=True))
     assert isinstance(run.error, AlignmentNoSignal)
     assert "tilting" in str(run.error) and "moving" in str(run.error) and "check the laser" in str(run.error)
-    assert searches(run) == ["angle", "lateral"]
+    assert searches(run) == ["lateral", "angle"] * len(algorithm.ACQUIRE_STAGES)
     end = run.context.events("align_end")[-1]
     assert end["passed"] is False and "AlignmentNoSignal" in end["error"]
     assert run.summary["error"]
