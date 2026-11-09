@@ -67,10 +67,11 @@ def jsonable(value):
 class Replay:
     """The recorded run, replayed into a fresh DataHub at ``speed`` times real time."""
 
-    def __init__(self, run, speed: float, threshold_mw: float, step: bool = False):
+    def __init__(self, run, speed: float, threshold_db: float, source_mw: float, step: bool = False):
         self.run = run
         self.speed = speed
-        self.threshold_mw = threshold_mw
+        self.threshold_db = threshold_db
+        self.source_mw = source_mw
         self.timeline = run.context.timeline
         self.hub = DataHub()
         self.epoch_utc = datetime.now(timezone.utc).isoformat()
@@ -171,7 +172,8 @@ class Replay:
             "done": self.done,
             "phases": list(algorithm.PHASES),
             "phase_views": algorithm.PHASE_VIEWS,
-            "threshold_w": self.threshold_mw * 1e-3,
+            "threshold_db": -abs(self.threshold_db),
+            "threshold_w": self.source_mw * 1e-3 * 10.0 ** (-abs(self.threshold_db) / 10.0),
             "error": None if run.error is None else f"{type(run.error).__name__}: {run.error}",
             "result": None if run.result is None else {
                 "passed": run.result.passed, "power_w": run.result.power_w, "reads": run.result.reads,
@@ -235,7 +237,8 @@ def make_handler(replay: Replay):
                 cursor, data = hub.read(query.get("ch", []), int(after) if after is not None else None)
                 return self._json({"now": hub.now(), "cursor": cursor, "data": data})
             if path == "/api/context":
-                return self._json({"enabled": True, "params": {"power_threshold_mw": {"value": replay.threshold_mw}},
+                return self._json({"enabled": True, "params": {"power_threshold_db": {"value": replay.threshold_db},
+                                                               "source_power_mw": {"value": replay.source_mw}},
                                    "variables": {}})
             if path == "/api/status":
                 phase = replay.phase
@@ -277,8 +280,8 @@ def main(argv=None) -> None:
     scenario = Scenario(offset=tuple(args.offset), optics=args.optics, pivot_um=tuple(args.pivot), dark=args.dark,
                         seed=args.seed, params={"acquire_full_search": args.full_search})
     run = simulate(scenario)
-    threshold_mw = run.context.params["power_threshold_mw"]
-    replay = Replay(run, args.speed, threshold_mw, step=args.step)
+    replay = Replay(run, args.speed, run.context.params["power_threshold_db"], run.context.params["source_power_mw"],
+                    step=args.step)
     outcome = replay.status()
     print(f"Simulated: {outcome['result'] or outcome['error']}", flush=True)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), make_handler(replay))

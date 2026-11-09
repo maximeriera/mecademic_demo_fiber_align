@@ -2,6 +2,8 @@
 //
 //   const camera = Plot3D.camera();                    // share it to rotate panels together
 //   const plot = Plot3D.create(canvas, camera, {labels: {x: 'X', y: 'Y', z: 'Z'}, fontPx: 14});
+//   // Optional: the z ticks for the range shown, instead of round values (e.g. a log axis):
+//   //   zTicks: (z0, z1) => [{v, text}, ...]
 //   plot.setAxes({x: [x0, x1], y: [y0, y1], z: [z0, z1]}, 300); // optional ms: animate to it
 //   plot.setAxes(null);                                // no box: only the message
 //   plot.setMessage('Waiting…');                       // shown while there is nothing to draw
@@ -105,6 +107,7 @@
         options = options || {};
         let labels = options.labels || { x: 'X', y: 'Y', z: 'Z' };
         const fontPx = options.fontPx || 11;
+        const zTickFn = options.zTicks || null;
         const style = Object.assign({
             text: '#9aa39f',
             grid: 'rgba(255, 255, 255, 0.08)',
@@ -270,11 +273,12 @@
             const corners = [[x0, y0], [x1, y0], [x0, y1], [x1, y1]];
             const [zx, zy] = corners.reduce((a, b) => (P(a[0], a[1], z0)[0] <= P(b[0], b[1], z0)[0] ? a : b));
             ctx.textAlign = 'right';
-            zTicks.values
-                .filter(v => v >= z0 + 0.15 * (z1 - z0))
-                .forEach(v => {
-                    const p = P(zx, zy, v);
-                    ctx.fillText(v.toFixed(decimalsFor(zTicks.step)), p[0] - 10, p[1]);
+            const zLabels = zTickFn ? zTickFn(z0, z1) : zTicks.values.map(v => ({ v, text: v.toFixed(decimalsFor(zTicks.step)) }));
+            zLabels
+                .filter(t => t.v >= z0 + 0.15 * (z1 - z0) && t.v <= z1)
+                .forEach(t => {
+                    const p = P(zx, zy, t.v);
+                    ctx.fillText(t.text, p[0] - 10, p[1]);
                 });
             const zTop = P(zx, zy, z1);
             ctx.textAlign = 'left';

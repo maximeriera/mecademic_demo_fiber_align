@@ -15,7 +15,7 @@ import pytest
 
 from app_logic.fiber_alignment import algorithm, alignment, frames
 
-from .sim import START_POSE, Scenario, simulate
+from .sim import START_POSE, FakeContext, Scenario, SimClock, simulate
 
 VIEW_JS = Path(__file__).resolve().parents[2] / "custom_view" / "view.js"
 AXES = {"x", "y", "z", "rx", "ry", "rz"}
@@ -66,6 +66,16 @@ def test_align_start_announces_the_phases_and_the_row_format(run):
     assert start["phase_views"] == algorithm.PHASE_VIEWS
     assert start["sample_format"] == alignment.SAMPLE_FORMAT == 2
     assert start["source_power_w"] == pytest.approx(1e-3)
+    # The view shows powers against the source: the threshold too.
+    assert start["threshold_w"] == pytest.approx(start["source_power_w"] * 10 ** (start["threshold_db"] / 10))
+
+
+def test_the_threshold_is_a_loss_against_the_source_whatever_its_sign():
+    for loss in (-0.4, 0.4):
+        settings = alignment.AlignmentSettings.from_context(
+            FakeContext(SimClock(), {"source_power_mw": 2.0, "power_threshold_db": loss}))
+        assert settings.threshold_db == -0.4
+        assert settings.threshold_w == pytest.approx(2e-3 * 10 ** -0.04)  # 1.824 mW
 
 
 def test_rows_have_the_documented_shape(run):

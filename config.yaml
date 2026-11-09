@@ -237,6 +237,7 @@ sequences:
     - Pick fiber
     - Move to alignment start
     - Align fiber
+    - Hold final position
     - Retract from alignment
     - Place fiber
 

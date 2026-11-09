@@ -169,7 +169,7 @@ def test_a_full_search_from_no_light_aligns_too():
 CELL_2026_11 = dict(width_um=75.0, angle_deg=0.075, wing=(1e-2, 300.0, 0.3), gap_um=90.0 / math.radians(1.0),
                     background_w=3.6e-8)
 CELL_2026_11_PARAMS = {"lateral_width_um": 75.0, "angle_width_deg": 0.075, "signal_detect_uw": 0.5,
-                       "acquire_capture_um": 250.0, "acquire_capture_deg": 0.3, "power_threshold_mw": 0.9}
+                       "acquire_capture_um": 250.0, "acquire_capture_deg": 0.3, "power_threshold_db": -0.46}
 
 
 def acquire_only(scenario):

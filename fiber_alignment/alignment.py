@@ -25,8 +25,9 @@ here:
 * ABORT, a device fault and ``align_timeout_s`` are checked before every
   command and every reading. A scan interrupted for any reason clears the
   robot's motion queue, so queued moves never run on after it.
-* The verdict is a fresh reading at the final position, compared with
-  ``power_threshold_mw``. The algorithm's own claim is not used. If that
+* The verdict is a fresh reading at the final position, compared with the
+  threshold: ``power_threshold_db`` under ``source_power_mw``. The
+  algorithm's own claim is not used. If that
   reading falls clearly below the best reading taken at rest, the fiber goes
   back there first.
 
@@ -127,9 +128,15 @@ class _Stamped(NamedTuple):
     pose: Pose6
 
 
+def threshold_w_of(source_w: float, loss_db: float) -> float:
+    """The power (W) ``loss_db`` under ``source_w``. A loss whatever its sign: 0.4 and -0.4 dB alike."""
+    return source_w * 10.0 ** (-abs(loss_db) / 10.0)
+
+
 @dataclass(frozen=True)
 class AlignmentSettings:
-    #: The alignment passes once the final reading reaches this (W).
+    #: The alignment passes once the final reading reaches this (W):
+    #: threshold_db (≤ 0) against the source.
     threshold_w: float
     #: How far each coordinate may go from the start pose (mm, degrees).
     range_mm: float
@@ -139,6 +146,8 @@ class AlignmentSettings:
     settle_s: float
     #: Power of the source (W): what a perfect coupling would read.
     source_power_w: float
+    #: The threshold against the source (dB, ≤ 0): power_threshold_db.
+    threshold_db: float
     #: Starting guesses of how wide the coupling is, re-measured as the
     #: alignment goes: the 1/e² radius of the power against a lateral offset
     #: (mm), and its 1/e half-width against a tilt (degrees).
@@ -170,13 +179,16 @@ class AlignmentSettings:
         def mw(name: str, default: float) -> float:
             return float(context.get_param(name, default)) * 1e-3
 
+        source_w = mw("source_power_mw", 1.0)
+        loss_db = float(context.get_param("power_threshold_db", -0.4))
         return cls(
-            threshold_w=mw("power_threshold_mw", 0.9),
+            threshold_w=threshold_w_of(source_w, loss_db),
+            threshold_db=-abs(loss_db),
             range_mm=float(context.get_param("align_range_um", 2000.0)) * 1e-3,
             range_deg=float(context.get_param("align_range_deg", 8.0)),
             timeout_s=float(context.get_param("align_timeout_s", 300.0)),
             settle_s=float(context.get_param("align_settle_s", 0.05)),
-            source_power_w=mw("source_power_mw", 1.0),
+            source_power_w=source_w,
             lateral_width_mm=float(context.get_param("lateral_width_um", 200.0)) * 1e-3,
             angle_width_deg=float(context.get_param("angle_width_deg", 0.3)),
             acquire_radius_deg=float(context.get_param("acquire_radius_deg", 2.0)),
@@ -676,9 +688,11 @@ def run_alignment(robot: Any, meter: Any, context: AppContext, fiber: int,
         f", remembered pose at x {io.seed[0]:.1f} µm, z {io.seed[2]:.1f} µm, "
         f"rx {io.seed[3]:.3f}°, rz {io.seed[5]:.3f}° from it")
     log.info(f"Alignment of fiber {fiber}: start {_fmt_pose(io.start)}{remembered}, window ±{settings.range_mm:g} mm "
-             f"/ ±{settings.range_deg:g}°, threshold {settings.threshold_w:.4g} W, timeout {settings.timeout_s:g} s. "
+             f"/ ±{settings.range_deg:g}°, threshold {settings.threshold_db:.2f} dB ({settings.threshold_w:.4g} W), "
+             f"timeout {settings.timeout_s:g} s. "
              f"Robot: {io._robot_state()}")
-    context.mark("align_start", fiber=fiber, threshold_w=settings.threshold_w, start=list(io.start),
+    context.mark("align_start", fiber=fiber, threshold_w=settings.threshold_w, threshold_db=settings.threshold_db,
+                 start=list(io.start),
                  range_mm=settings.range_mm, range_deg=settings.range_deg, phases=list(io.phases),
                  phase_views=phase_views, timeout_s=settings.timeout_s, source_power_w=settings.source_power_w,
                  sample_format=SAMPLE_FORMAT)
@@ -771,6 +785,7 @@ def _summary(io: AlignmentIO, settings: AlignmentSettings, fiber: int, phase_vie
     return {
         "fiber": fiber,
         "threshold_w": settings.threshold_w,
+        "threshold_db": settings.threshold_db,
         "source_power_w": settings.source_power_w,
         "start": list(io.start),
         "sample_format": SAMPLE_FORMAT,

@@ -1,8 +1,8 @@
-"""PROD task: one fiber per cycle. Pick it, align it, retract, put it back.
+"""PROD task: one fiber per cycle. Pick it, align it, hold it there, retract, put it back.
 
 With the ``prod_align_only`` param on, a cycle only aligns the fiber already in
 the gripper, from a random start: Move to alignment start, Random offset,
-Align, Retract (process.run_align_only_cycle). Nothing is picked or placed,
+Align, Hold, Retract (process.run_align_only_cycle). Nothing is picked or placed,
 ``next_fiber`` does not advance, and a search that finds no light counts in
 ``failed_count`` instead of faulting the cell.
 

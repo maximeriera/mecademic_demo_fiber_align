@@ -1,4 +1,4 @@
-"""Custom view: live power against the threshold, and the alignment phase by phase, on /view/.
+"""Custom view: live power in dB against the source and the threshold, and the alignment phase by phase, on /view/.
 
 Optional. When this package exists next to ``config.yaml``, the controller
 calls :func:`setup` at every Initialize, then starts the hub. Delete the folder
@@ -68,9 +68,12 @@ algorithm.py; app_logic/tests/fiber_alignment/test_contract.py checks it):
     timeout, start pose, threshold, ``source_power_w``) and ``align_end``
     around the run, ``align_phase_start`` / ``align_phase_end`` around each
     phase. Each publish also carries ``phase`` and ``t``.
-* The threshold is not on the hub. The page reads ``power_threshold_mw`` from
-  /api/context, so an edit in the Variables tab shows at once, even before
-  Initialize.
+* The source power and the threshold are not on the hub. The page reads
+  ``source_power_mw`` and ``power_threshold_db`` (a loss against the source)
+  from /api/context, so an edit in the Variables tab shows at once, even
+  before Initialize. It shows powers in dB against the source, except on the
+  Acquire map, which stays in watts. The charts and the Peak landscape use a
+  log scale of the loss.
 
 The page knows no phase by name: it draws one card per phase, as its view
 says ("map", "profiles" or "peak"). It must not load anything from a CDN:
@@ -108,8 +111,8 @@ def setup(hub, devices):
     if isinstance(meter, SimulatedDevice):
         raise LookupError(f"Device '{POWER_METER}' is simulated: there is no power to show.")
 
-    # The page compares readings with a threshold in mW and draws them on a
-    # linear axis; dBm would also be negative below 1 mW.
+    # The page takes readings in watts: it shows them against the source in
+    # dB, and on the 3D landscapes in watts.
     unit = meter.api.power_unit
     if unit != "W":
         raise ValueError(

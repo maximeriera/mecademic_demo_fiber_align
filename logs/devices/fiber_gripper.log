@@ -151,3 +151,31 @@
 2026-11-06 16:55:48 | WARNING | http-10075       | device.fiber_gripper   | SmarActMCS2:216  | [req=981311d3] [fiber_gripper] Abort requested: stopping channels [0].
 2026-11-06 16:57:09 | INFO    | http-11881       | device.fiber_gripper   | SmarActMCS2:271  | [req=2100a1b0] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
 2026-11-06 16:59:20 | WARNING | http-14590       | device.fiber_gripper   | SmarActMCS2:216  | [req=a7ce25bc] [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-06 20:16:36 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-06 20:16:38 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-06 20:16:39 | INFO    | http-76          | device.fiber_gripper   | SmarActMCS2:271  | [req=40c1a566] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-06 21:16:18 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-06 21:16:21 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-06 21:16:22 | INFO    | http-63          | device.fiber_gripper   | SmarActMCS2:271  | [req=91c645a2] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-06 21:38:57 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-06 21:39:00 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-06 21:39:01 | INFO    | http-37          | device.fiber_gripper   | SmarActMCS2:271  | [req=83fee9d9] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 14:20:08 | ERROR   | http-4671535     | device.fiber_gripper   | SmarActMCS2:253  | [req=1e0ba94b] [fiber_gripper] Connection failed: Session is closed - call open() or use 'with MCS2(host) as m'
+2026-11-09 14:20:18 | INFO    | http-4671659     | device.fiber_gripper   | SmarActMCS2:271  | [req=758a5b7e] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 15:35:28 | INFO    | http-4766842     | device.fiber_gripper   | SmarActMCS2:271  | [req=d3debbd1] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 16:51:10 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 16:51:11 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 16:51:21 | INFO    | http-450         | device.fiber_gripper   | SmarActMCS2:271  | [req=ec32582e] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 17:30:33 | WARNING | MainThread       | device.fiber_gripper   | SmarActMCS2:216  | [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 17:30:34 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 17:30:36 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 17:30:44 | INFO    | http-209         | device.fiber_gripper   | SmarActMCS2:271  | [req=1c52d6e2] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 17:47:40 | WARNING | http-37278       | device.fiber_gripper   | SmarActMCS2:216  | [req=e9592ef5] [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 17:47:44 | INFO    | http-37371       | device.fiber_gripper   | SmarActMCS2:271  | [req=1c00af57] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 17:47:56 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 17:48:37 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 17:49:19 | INFO    | http-1033        | device.fiber_gripper   | SmarActMCS2:271  | [req=1a2a95f6] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 18:09:48 | WARNING | MainThread       | device.fiber_gripper   | SmarActMCS2:216  | [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 18:09:50 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 18:09:51 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 18:09:57 | INFO    | http-216         | device.fiber_gripper   | SmarActMCS2:271  | [req=f1307d74] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"

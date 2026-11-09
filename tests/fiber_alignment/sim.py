@@ -503,7 +503,7 @@ class FakeContext:
 
 #: Params of a simulated run: the defaults of context.yaml, with a threshold the model can reach.
 DEFAULT_PARAMS = {
-    "power_threshold_mw": 0.8,
+    "power_threshold_db": -0.97,  # 0.80 mW of the 1 mW source
     "align_range_um": 2000.0,
     "align_range_deg": 8.0,
     "align_timeout_s": 300.0,

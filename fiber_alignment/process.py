@@ -1,8 +1,8 @@
 """The steps of the fiber alignment process.
 
-Pick, Move to alignment start, Align, Retract and Place make the PROD cycle;
-with ``prod_align_only``, PROD runs Move to alignment start, Random offset,
-Align and Retract instead (``run_align_only_cycle``). Shared by the PROD cycle
+Pick, Move to alignment start, Align, Hold, Retract and Place make the PROD
+cycle; with ``prod_align_only``, PROD runs Move to alignment start, Random
+offset, Align, Hold and Retract instead (``run_align_only_cycle``). Shared by the PROD cycle
 (prod.py) and the Manual tab (manual_actions.py), so a step tested by hand is
 exactly the step production runs. Each function:
 
@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import math
 import random
+import time
 from datetime import datetime
 from typing import Any, Callable, Dict, Optional, Tuple
 
@@ -36,8 +37,12 @@ from .cell import ROBOT, ProcessError, power_meter, prepare_robot, run_program
 #: The steps of a PROD cycle, in order (the same as ``sequences: prod_cycle`` in
 #: config.yaml), and those of the alignment-only cycle. prod.py declares the
 #: one it runs, for "step 2 of 4" on the Production tab.
-CYCLE_STEPS = ["Pick fiber", "Move to alignment start", "Align fiber", "Retract from alignment", "Place fiber"]
-ALIGN_ONLY_STEPS = ["Move to alignment start", "Random offset", "Align fiber", "Retract from alignment"]
+CYCLE_STEPS = ["Pick fiber", "Move to alignment start", "Align fiber", "Hold final position", "Retract from alignment",
+               "Place fiber"]
+ALIGN_ONLY_STEPS = ["Move to alignment start", "Random offset", "Align fiber", "Hold final position",
+                    "Retract from alignment"]
+#: How often the power is read while the fiber holds its final position (s).
+HOLD_READ_S = 0.5
 
 
 def pick_fiber(devices: Dict[str, Device], context: AppContext, number: int) -> None:
@@ -115,6 +120,49 @@ def align_fiber(devices: Dict[str, Device], context: AppContext,
         return result
 
 
+def hold_final_position(devices: Dict[str, Device], context: AppContext) -> Optional[Tuple[float, float, float]]:
+    """Keep the fiber where the alignment left it for ``hold_final_s``, reading the power meanwhile.
+
+    The robot does not move. An ABORT or a device fault ends the hold at once
+    (the controller marks it on the events channel before stopping the task;
+    there is no robot command here for it to interrupt). Logs the power at the
+    start and at the end of the hold, its lowest, and the drift in dB: how
+    steady the alignment stays. Returns (first, last, lowest) in W, or None
+    when there is no hold (``hold_final_s`` 0) or no reading.
+    """
+    with context.step("Hold final position"):
+        hold_s = max(0.0, float(context.get_param("hold_final_s", 5.0)))
+        if hold_s <= 0:
+            return None
+        if not context.get_variable("at_alignment", False):
+            raise ProcessError("The robot is not at the alignment station: no final position to hold.")
+        meter = power_meter(devices)
+        since = context.data.now()
+        end = time.monotonic() + hold_s
+        readings = []
+        while True:
+            stop = [e for _, e in context.data.window("events", since) if (e or {}).get("name") in ("abort", "fault")]
+            if stop:
+                raise ProcessError(f"Hold of the final position interrupted ({stop[-1]['name']}).")
+            watts = meter.read_power()
+            # Overrange reads +inf and an invalid reading NaN: not a power to report.
+            if isinstance(watts, float) and math.isfinite(watts):
+                readings.append(watts)
+            left = end - time.monotonic()
+            if left <= 0:
+                break
+            time.sleep(min(HOLD_READ_S, left))
+        logger = devices[ROBOT].logger
+        if not readings:
+            logger.warning(f"Held the final position {hold_s:g} s: no valid power reading.")
+            return None
+        first, last, lowest = readings[0], readings[-1], min(readings)
+        drift = f"{10 * math.log10(last / first):+.3f} dB" if first > 0 and last > 0 else "n/a"
+        logger.info(f"Held the final position {hold_s:g} s: {first * 1e3:.4g} → {last * 1e3:.4g} mW "
+                    f"(lowest {lowest * 1e3:.4g} mW, drift {drift}, {len(readings)} readings).")
+        return first, last, lowest
+
+
 def random_offset(devices: Dict[str, Device], context: AppContext) -> Tuple[float, float, float, float]:
     """Move the fiber by a random offset in its tool frame (``MoveLinRelTrf``), at the alignment station.
 
@@ -174,7 +222,7 @@ def place_fiber(devices: Dict[str, Device], context: AppContext) -> None:
 
 
 def run_cycle(devices: Dict[str, Device], context: AppContext, number: int) -> AlignmentResult:
-    """Pick fiber ``number``, align it, retract and put it back.
+    """Pick fiber ``number``, align it, hold it at its final position, retract and put it back.
 
     A fiber that does not reach the threshold is still put back. The caller
     decides what a failed alignment means (prod.py counts it and moves on).
@@ -182,6 +230,7 @@ def run_cycle(devices: Dict[str, Device], context: AppContext, number: int) -> A
     pick_fiber(devices, context, number)
     move_to_alignment_start(devices, context)
     result = align_fiber(devices, context)
+    hold_final_position(devices, context)
     retract_from_alignment(devices, context)
     place_fiber(devices, context)
     return result
@@ -225,7 +274,7 @@ def recover(devices: Dict[str, Device], context: AppContext, error: Exception, p
 
 
 def run_align_only_cycle(devices: Dict[str, Device], context: AppContext) -> Optional[AlignmentResult]:
-    """Move the held fiber to the alignment start, off by a random offset, align it, and retract.
+    """Move the held fiber to the alignment start, off by a random offset, align it, hold it there, and retract.
 
     For running the alignment over and over from random starts: nothing is
     picked or placed. A search that finds no light is not a fault here: it is
@@ -244,5 +293,7 @@ def run_align_only_cycle(devices: Dict[str, Device], context: AppContext) -> Opt
         logger.warning(f"Alignment-only cycle: no light found ({e}). Retracting for the next cycle.")
     finally:
         runlog.record(context, logger, offset, summary)
+    if result is not None:
+        hold_final_position(devices, context)
     retract_from_alignment(devices, context)
     return result

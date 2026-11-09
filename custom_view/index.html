@@ -73,6 +73,8 @@
             text-transform: none;
         }
         .sub-title { color: var(--color-muted); margin-bottom: 4px; }
+        /* Units keep their case in a title set in capitals: µm is not MM. */
+        .sub-title .unit { text-transform: none; letter-spacing: 0.02em; }
         canvas { display: block; width: 100%; }
 
         /* --- Row 1: live power, power over time, the alignment and its verdict --- */
@@ -82,8 +84,9 @@
             grid-template-columns: minmax(300px, 0.9fr) minmax(0, 3fr) minmax(380px, 1.25fr);
             gap: 10px;
         }
-        /* Live power: the whole tile turns green at or above the threshold and
-           red below it, so the state reads from across the stand. */
+        /* Live power, as a loss against the source (dB): the whole tile turns
+           green at or above the threshold and red below it, so the state reads
+           from across the stand. */
         .power-card {
             display: flex;
             flex-direction: column;
@@ -112,9 +115,12 @@
         .power-value .unit { font-size: 0.4em; font-weight: 600; color: var(--color-muted); margin-left: 8px; }
         .power-card.above .power-value { color: var(--color-accent); }
         .power-card.below .power-value { color: var(--color-red); }
+        .power-watts { color: var(--color-text); font-variant-numeric: tabular-nums; }
         .power-threshold { color: var(--color-muted); font-variant-numeric: tabular-nums; }
         .power-threshold strong { color: var(--color-text); }
         .power-state { color: var(--color-muted); }
+        /* The margin to the threshold, after the state: "dB" stays as written. */
+        .power-state .margin { text-transform: none; letter-spacing: 0.02em; }
         .power-card.above .power-state { color: var(--color-accent); }
         .power-card.below .power-state { color: var(--color-red); }
 
@@ -248,14 +254,15 @@
 
         <div class="head-row">
             <section class="card power-card" id="power-card">
-                <div class="card-title">Power <span>— live</span></div>
+                <div class="card-title">Power <span>— live, against the source</span></div>
                 <div class="power-value"><span id="power-now">—</span><span class="unit" id="power-unit"></span></div>
-                <div class="power-threshold">Threshold <strong id="threshold">—</strong> <span id="margin"></span></div>
-                <div class="power-state" id="power-state">Waiting for the power meter…</div>
+                <div class="power-watts" id="power-watts"></div>
+                <div class="power-threshold">Threshold <strong id="threshold">—</strong> <span id="threshold-w"></span></div>
+                <div class="power-state"><span id="power-state">Waiting for the power meter…</span><span class="margin" id="margin"></span></div>
             </section>
 
             <section class="card trace-card">
-                <div class="card-title">Power over time <span>— dB vs threshold, best so far in green</span></div>
+                <div class="card-title">Power over time <span>— dB vs source, log scale, best so far in green</span></div>
                 <canvas id="chart-trace"></canvas>
             </section>
 

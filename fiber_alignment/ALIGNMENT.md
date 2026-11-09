@@ -54,9 +54,9 @@ is outlined in yellow.
 | Phase | What the robot does | What the card shows |
 |---|---|---|
 | **Acquire**: find the light | It goes to where this fiber aligned last time, if it has before, and measures the meter's noise. If light already reaches the meter, it goes straight to Center (unless the full search is on: see below). Otherwise it sweeps Lissajous curves around the start: sideways first, then in angle, over a small disc, then larger ones (up to 500 µm and 3°). A faint hint of light makes it start again from there. It stops at the first light, goes back to it and checks it at rest, looking around slowly if the light was not quite there. Still dark, it sweeps in angle again at 6 points around the start. | A 3D landscape of the power along the latest scan, always over X/Z: a tilt scan turns the fiber without moving it sideways, so it shows as a column of readings at one spot. The line under it says where the scan is centred: "remembered pose", "hint 1", "ring 3/6", or nothing for the start; "light at the remembered pose" when the fiber found light where it aligned last time. The "light" mark on the colour bar is the level that counts as light. It keeps filling during the later phases: their readings join the map, which shows the best power seen at each spot, so the landscape rises to the final peak as the robot climbs. |
-| **Center**: centre on the beam | It sweeps across the beam along X, then along Z, both ways. It fits a bell curve to each sweep and moves to its top, until the top stops moving. | The latest X and Z sweeps (green forward, blue backward), the fitted bell curve, and the chosen centre in yellow. |
-| **Angle**: square the angle | For Rx, then Rz, it tries tilts stepping away from the current one while the power rises, re-centring at each tilt. A curve through the best tilts picks the angle. It repeats with finer steps while that still gains. | Top: the power against each tilt, with the fitted curve and the "walk": how far the best position moves per degree of tilt. Bottom: the sideways re-centring sweeps. |
-| **Peak**: the last few µm, and the last hundredths of a degree | First, small circles read on the move, as in the cell's first script: one sideways (about 36 µm across), then one in angle (about 0.03°). The power around each circle shows which way is uphill, and the robot steps that way; shorter steps after one goes too far. It repeats until the steps are lost in the noise, usually 1 to 4 rounds of about 2.5 s on the cell. Then it takes readings at rest on a small square grid, 5×5 by default (±0.2 beam width, about ±50 µm). It fits a dome to them and steps to its top, until the steps are tiny. It ends on the best reading taken at rest. | The grid readings and the sideways circles as a 3D landscape, the centres on its floor, and every step, circles then grid. |
+| **Center**: centre on the beam | It sweeps across the beam along X, then along Z, both ways. It fits a bell curve to each sweep and moves to its top, until the top stops moving. | The latest X and Z sweeps (green forward, blue backward), the fitted bell curve, and the chosen centre in yellow, in dB against the source on a log scale of the loss (the last dB under the source as tall as the 40 under it). |
+| **Angle**: square the angle | For Rx, then Rz, it tries tilts stepping away from the current one while the power rises, re-centring at each tilt. A curve through the best tilts picks the angle. It repeats with finer steps while that still gains. | Top: the power against each tilt, with the fitted curve and the "walk": how far the best position moves per degree of tilt. Bottom: the sideways re-centring sweeps. All in dB against the source on a log scale of the loss, the tilts zoomed on the latest round. |
+| **Peak**: the last few µm, and the last hundredths of a degree | First, small circles read on the move, as in the cell's first script: one sideways (about 36 µm across), then one in angle (about 0.03°). The power around each circle shows which way is uphill, and the robot steps that way; shorter steps after one goes too far. It repeats until the steps are lost in the noise, usually 1 to 4 rounds of about 2.5 s on the cell. Then it takes readings at rest on a small square grid, 5×5 by default (±0.2 beam width, about ±50 µm). It fits a dome to them and steps to its top, until the steps are tiny. It ends on the best reading taken at rest. | The grid readings and the sideways circles as a 3D landscape in dB against the source (on a log scale of the loss, so tenths of a dB show), the centres on its floor, and the size of every step, circles then grid: lateral ones in µm, tilt ones in m°. |
 
 When the start is tilted, Angle brings by far the largest gain (+6 to
 +18 dB in simulation); when it is only off sideways, Center does. Peak
@@ -68,18 +68,22 @@ robot answer.
 
 ### The top row
 
-- **Power, live.** Green at or above the threshold (`power_threshold_mw`),
-  red below.
-- **Power over time.** In dB against the threshold: 0 is the threshold, and
-  the best so far is drawn in green. Each phase has a band.
+- **Power, live.** In dB against the source (`source_power_mw`): 0 dB is
+  all of it. Under it, the reading itself and the source, then the threshold
+  (`power_threshold_db`) in dB and in µW. Green at or above the threshold,
+  red below, with the margin to it.
+- **Power over time.** In dB against the source on a log scale of the loss
+  (the last dB under the source as tall as the 40 under it, as on the Center
+  and Angle charts), the threshold dashed, and the best so far drawn in
+  green. Each phase has a band.
 - **Alignment.** The verdict, the time spent against the time budget, and one
   line per phase with its gain in dB and its duration.
 
 ### The verdict
 
-`✓ Aligned · 931.7 µW` or `✗ Below threshold · …`. The line under it gives
-the threshold, the coupling against the source in dB, and the number of
-readings. A fiber below the threshold is still put back in its slot and
+`✓ Aligned · −0.31 dB` or `✗ Below threshold · …`: the final power against
+the source. The line under it gives that power and the source in µW and mW,
+the threshold in dB, and the number of readings. A fiber below the threshold is still put back in its slot and
 counted as failed, and the cycle moves on to the next fiber. If the alignment
 stops on an error (or ABORT), it shows `✗ Interrupted` with the message under
 it.
@@ -314,7 +318,8 @@ offsets. The rows published on `align_sample` use them too.
 - A fresh reading in auto range, where the algorithm left the fiber. If it is
   more than 0.2 dB under the best reading at rest, the fiber slowly goes back
   there first.
-- Passed if the reading is at least `power_threshold_mw`.
+- Passed if the reading is at least the threshold: `power_threshold_db`
+  under `source_power_mw` (its sign aside: −0.4 dB is 0.912 mW from 1 mW).
 - The result is published on `align_result`, with everything the page needs
   to redraw the run after a reload.
 
@@ -340,8 +345,8 @@ does not apply to it until you press Reset on it.
 
 | Param | Default | What it sets |
 |---|---|---|
-| `power_threshold_mw` | 0.65 | Pass or fail. Set it 0.5–1 dB under the peak measured on the setup (0.76 mW on 2026-10-28). |
-| `source_power_mw` | 1.0 | The source's output. The scans' fixed meter range is at most 1.2 × this; the verdict shows dB against it. |
+| `power_threshold_db` | −0.4 | Pass or fail: how far under the source the final power may be (dB, its sign aside). The cell's passed runs of 2026-11-06 ended 0.23–0.39 dB under 1 mW. |
+| `source_power_mw` | 1.0 | The source's output. The threshold and the view's dB are against it; the scans' fixed meter range is at most 1.2 × this. |
 | `lateral_width_um` | 200 | Starting guess of the lateral 1/e² radius. Cross scans span ±1.5 widths with a reading every width/10, and the Peak pattern spans ±0.2 width. Re-measured by every fit. |
 | `angle_width_deg` | 0.2 | Starting guess of the tilt 1/e half-width (0.19° measured on 2026-10-28). The first tilt step is 0.5 width. Re-measured by the tilt parabolas. |
 | `acquire_radius_deg` | 3.0 | How far the rotation scans reach, in their largest disc (1/3, 2/3, then all of it). |
@@ -438,8 +443,9 @@ How far the search reaches, with the cell's optics of November 2026 (a
    receiver's tip: tilts swing the tip around. Teach `TOOL_TRF` again.
 3. **Lag.** The Center card's `lag` shows how late readings land along a
    scan. Two-way scans cancel it, but a large value means slow readings.
-4. **Threshold.** Note the peak power of a good alignment, then set
-   `power_threshold_mw` 0.5–1 dB under it.
+4. **Threshold.** Set `source_power_mw` to the source's output, note the
+   loss of a good alignment against it on the live tile, then set
+   `power_threshold_db` a little under it (−0.4 dB on the cell).
 5. **Cold starts.** Turn `use_remembered_pose` off first, or the remembered
    pose skips the search. Run 5 alignments from no light (tilted ~1° from
    the Manual tab) and 5 from a few µW. Note their time and final power.

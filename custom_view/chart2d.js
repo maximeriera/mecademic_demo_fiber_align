@@ -1,6 +1,8 @@
 // chart2d.js — dependency-free 2D line chart on a <canvas>, for the custom view.
 //
 //   const chart = Chart2D.create(canvas, {fontPx: 14, xLabel: 't (s)', yLabel: 'dB'});
+//   // Optional: the y ticks for the range shown, instead of round values (e.g. a log axis):
+//   //   yTicks: (y0, y1) => [{v, text}, ...]
 //   chart.setRange({x: [x0, x1], y: [y0, y1]}, 300);   // optional ms: animate to it
 //   chart.setRange(null);                               // no axes: only the message
 //   chart.setData({
@@ -43,6 +45,7 @@
             axis: 'rgba(255, 255, 255, 0.22)',
         }, options.style);
         let labels = { x: options.xLabel || '', y: options.yLabel || '' };
+        const yTicks = options.yTicks || null;
         let message = options.message || 'Waiting for data…';
         let data = { series: [], bands: [], hlines: [], vlines: [], markers: [] };
         let range = null;
@@ -149,15 +152,16 @@
             ctx.fillStyle = style.text;
             ctx.lineWidth = 1;
             const yt = niceTicks(y0, y1, 4);
+            const ticks = yTicks ? yTicks(y0, y1) : yt.values.map(v => ({ v, text: v.toFixed(decimalsFor(yt.step)) }));
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
-            yt.values.forEach(v => {
+            ticks.forEach(({ v, text }) => {
                 const y = Math.round(sy(v)) + 0.5;
                 ctx.beginPath();
                 ctx.moveTo(pad.l, y);
                 ctx.lineTo(pad.l + pw, y);
                 ctx.stroke();
-                ctx.fillText(v.toFixed(decimalsFor(yt.step)), pad.l - 6, y);
+                ctx.fillText(text, pad.l - 6, y);
             });
             const xt = niceTicks(x0, x1, Math.max(2, Math.floor(pw / (fontPx * 6))));
             ctx.textAlign = 'center';

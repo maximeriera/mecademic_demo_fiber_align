@@ -44,21 +44,23 @@ params:
   #   description: <free text>      # shown in the Variables tab
 
   # --- Alignment (read by fiber_alignment/alignment.py) -----------------------
-  power_threshold_mw:
+  power_threshold_db:
     type: float
-    # 0.5-1 dB under the peak power measured on the setup: 0.76 mW on
-    # 2026-10-28 (with an air gap, two glass/air faces cost ~7 %: a perfect
-    # alignment of a 1 mW source reads about 0.93 mW).
-    default: 0.65
+    # A loss against source_power_mw, its sign aside. With an air gap, two
+    # glass/air faces cost ~7 %: a perfect alignment of a 1 mW source reads
+    # about 0.93 mW (-0.32 dB). The cell's 396 passed runs of 2026-11-06
+    # ended at 0.915-0.948 mW: all above -0.4 dB (0.912 mW).
+    default: -0.4
     editable_when_idle: true
     persist: true
-    description: Alignment passes when the power meter reads at least this (mW). Shown on the custom view.
+    description: Alignment passes when the power reads at most this many dB under the source (source_power_mw); -0.4 dB is 91 % of it. Shown on the custom view, which shows every power in dB against the source.
 
   align_range_um:
     type: float
-    # The lateral search spiral reaches acquire_radius_um from the start, the
-    # centring scans a little beyond: the alignment refuses to start unless
-    # this leaves them 100 µm. Y (along the fiber) is never moved.
+    # The first-light search's translation scans reach acquire_radius_um from
+    # the start along X and Z, the centring scans a little beyond: the
+    # alignment refuses to start unless this leaves them 100 µm. Y (along the
+    # fiber) is never moved.
     default: 2000.0
     editable_when_idle: true
     persist: true
@@ -66,8 +68,8 @@ params:
 
   align_range_deg:
     type: float
-    # The tilt search spiral reaches acquire_radius_deg from the start: the
-    # alignment refuses to start unless this leaves it 0.5°.
+    # The first-light search's rotation scans reach acquire_radius_deg from
+    # the start: the alignment refuses to start unless this leaves them 0.5°.
     default: 8.0
     editable_when_idle: true
     persist: true
@@ -75,8 +77,10 @@ params:
 
   align_timeout_s:
     type: float
-    # Alignments on the cell take 40-90 s; a cold start that needs the ring of
-    # tilt spirals (acquire_ring_um) adds up to ~20 s.
+    # Alignments on the cell take 40-90 s. In simulation with the cell's
+    # params, the first-light search gives up after ~105 s in the dark: ~17 s
+    # of scans around the start, then the ring of rotation scans
+    # (acquire_ring_um), ~15 s per point.
     default: 150.0
     editable_when_idle: true
     persist: true
@@ -96,10 +100,11 @@ params:
     default: 1.0
     editable_when_idle: true
     persist: true
-    description: Power of the source (mW), what a perfect coupling would read. The scans fix the meter's range from it, and the custom view shows the coupling against it in dB.
+    description: Power of the source (mW), what a perfect coupling would read. The threshold (power_threshold_db) and the custom view's dB are against it; the scans fix the meter's range from it.
 
   # How wide the coupling is: starting guesses, re-measured by every alignment
-  # (scan spans, steps and spiral pitches follow them). From the cell's
+  # (scan spans and steps follow them; the first-light search follows
+  # acquire_capture_um / acquire_capture_deg instead). From the cell's
   # collimated ends, 2026-10-27: ~240 µm and ~0.3°; 2026-10-28: ~0.19° in
   # tilt. Bare single-mode fibers a few µm apart: ~10 µm and ~5°.
   lateral_width_um:
@@ -121,23 +126,42 @@ params:
     default: 3.0
     editable_when_idle: true
     persist: true
-    description: When no light reaches the meter at the start, the search first tilts in a spiral out to this far from the start tilt (°). Must fit inside align_range_deg.
+    description: How far the first-light search's rotation scans reach from their centre (°), in their last, largest disc (Lissajous scans of 1/3, 2/3 then all of it). Must fit inside align_range_deg.
 
   acquire_radius_um:
     type: float
     default: 500.0
     editable_when_idle: true
     persist: true
-    description: Still no light after the tilt spiral, the search spirals laterally out to this far from the start (µm). Must fit inside align_range_um.
+    description: How far the first-light search's translation scans reach from their centre (µm), in their last, largest disc (Lissajous scans of 1/3, 2/3 then all of it). Must fit inside align_range_um.
+
+  acquire_capture_um:
+    type: float
+    # Fitted to the cell's 466 runs of Nov 5-6: light above 0.5 µW shows up
+    # to ~360 µm sideways from the optimum (the beam's faint wings, far wider
+    # than its 75 µm core); 250 keeps a margin.
+    default: 250.0
+    editable_when_idle: true
+    persist: true
+    description: How far sideways from the optimum light still shows above signal_detect_uw (µm). Sizes the translation scans of the first-light search, which pass this close to every point. Too small makes the search slow; too large makes it miss.
+
+  acquire_capture_deg:
+    type: float
+    # As acquire_capture_um: light shows up to ~0.45° in tilt from the optimum; 0.3 keeps a margin.
+    default: 0.3
+    editable_when_idle: true
+    persist: true
+    description: How far in tilt from the optimum light still shows above signal_detect_uw (°). Sizes the rotation scans of the first-light search, as acquire_capture_um the translation scans.
 
   acquire_ring_um:
     type: float
-    # A picked fiber is often off in tilt and sideways at once, which neither
-    # spiral alone finds. 0 turns the ring off.
-    default: 750.0
+    # A fiber off in tilt and sideways at once, beyond what the rotation
+    # scans at the start see (about acquire_capture_um sideways): about 1.5 ×
+    # acquire_capture_um. 0 turns the ring off.
+    default: 400.0
     editable_when_idle: true
     persist: true
-    description: Still no light after both spirals, the tilt spiral runs again at 6 points this far around the start (µm). 0 turns it off. Must fit inside align_range_um.
+    description: Still no light after all the scans, rotation scans again at 6 points this far around the start (µm). About 1.5 × acquire_capture_um. 0 turns it off. Must fit inside align_range_um.
 
   signal_detect_uw:
     type: float
@@ -151,12 +175,21 @@ params:
 
   acquire_full_search:
     type: bool
-    # For demos: off, light at the start skips the search and each spiral
-    # stops once past the light, which is faster.
+    # For demos: off, light at the start skips the search and each scan
+    # stops at the first hint of light, which is faster.
     default: true
     editable_when_idle: true
     persist: true
-    description: Run the whole search for first light, even with light at the start - the tilt spiral then the lateral spiral, each to its full radius - to show it. Off, the search stops as soon as it has the light.
+    description: Show the whole search for first light, even with light at the start - a translation then a rotation scan over the full radius, each to its end - before using the light they saw. Off, the search stops as soon as it has the light.
+
+  hold_final_s:
+    type: float
+    # Read every 0.5 s meanwhile; the log gives the power at the start and
+    # the end of the hold, its lowest and the drift in dB.
+    default: 5.0
+    editable_when_idle: true
+    persist: true
+    description: After each alignment, the fiber holds its final position this long (s) before it retracts, the power read throughout (its drift is logged). 0 skips the hold. Not after a search that found no light.
 
   use_remembered_pose:
     type: bool
@@ -231,7 +264,7 @@ params:
     default: false
     editable_when_idle: true
     persist: true
-    description: 'PROD runs only the alignment, over and over, on the held fiber: Move to alignment start, a random offset (random_offset_um, random_offset_deg), Align, Retract. Off: the full cycle (Pick, Move, Align, Retract, Place).'
+    description: 'PROD runs only the alignment, over and over, on the held fiber: Move to alignment start, a random offset (random_offset_um, random_offset_deg), Align, Hold (hold_final_s), Retract. Off: the full cycle (Pick, Move, Align, Retract, Place).'
 
   random_offset_um:
     type: float

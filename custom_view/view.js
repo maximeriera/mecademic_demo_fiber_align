@@ -1,17 +1,22 @@
-// Fiber alignment view: live power against the threshold, the power over
-// time in dB, the alignment's progress and verdict, and one plot card per
-// phase, side by side, laid out as the algorithm declares them
+// Fiber alignment view: live power as a loss against the source (dB) and
+// the threshold, the power over time in dB, the alignment's progress and
+// verdict, and one plot card per phase, side by side, laid out as the
+// algorithm declares them
 // (algorithm.PHASE_VIEWS, carried by align_start and align_result, and by
 // align_phases before any run): "map" a 3D power landscape over two axes,
 // "profiles" the latest 1-D scans of each axis, "peak" the peak search's
 // readings at rest and its steps. The view knows no phase by name.
-// Reads the hub through DataHubClient, the threshold from /api/context.
+// Powers are shown in dB against the source (0 dB: all of it), on a log
+// scale of the loss in the charts and the Peak landscape; the Acquire map
+// stays in watts. Reads the hub through
+// DataHubClient, the source power and the threshold from /api/context.
 // Dependency-free canvas drawing (plot3d.js, chart2d.js, landscape.js): no CDN
 // on a show floor.
 (function () {
     'use strict';
 
-    const THRESHOLD_PARAM = 'power_threshold_mw';
+    const THRESHOLD_PARAM = 'power_threshold_db';
+    const SOURCE_PARAM = 'source_power_mw';
     const CONTEXT_POLL_MS = 1000;
     // The hub is polled every POLL_MS: the live tile shows each new reading
     // (custom_view.POWER_RATE_HZ). The run's cards and charts are rebuilt at
@@ -79,6 +84,48 @@
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     const dbOf = (watts, ref) => (watts > 0 && ref > 0 ? 10 * Math.log10(watts / ref) : -60);
     const signed = (v, digits = 1) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(digits)}`;
+    // A loss against the source (dB): 0 is all of it. No power at all (the
+    // meter's noise around 0 W) sits at DB_FLOOR, under any axis shown.
+    const DB_FLOOR = -90;
+    const lossDb = (watts, source) => (watts > 0 && source > 0 ? Math.max(DB_FLOOR, 10 * Math.log10(watts / source)) : DB_FLOOR);
+    // Hundredths near the source, where the threshold is; tenths further down.
+    const dbDigits = db => (Math.abs(db) < 10 ? 2 : 1);
+    const dbText = db => (isNum(db) ? `${signed(db, dbDigits(db))} dB` : '—');
+
+    // The y axis of the power over time and of the profiles: a log scale of
+    // the loss, sign(dB) · log10(1 + |dB| / LOSS_KNEE_DB). About linear
+    // within the knee, logarithmic beyond: the last dB under the source,
+    // where the threshold and the peak are, takes as much room as the 40
+    // under it, so small differences near the top show.
+    const LOSS_KNEE_DB = 0.1;
+    const lossAxis = db => Math.sign(db) * Math.log10(1 + Math.abs(db) / LOSS_KNEE_DB);
+    const lossFromAxis = y => Math.sign(y) * LOSS_KNEE_DB * (10 ** Math.abs(y) - 1);
+    // Losses ticked on that axis (dB, either sign): about evenly spaced on it.
+    const LOSS_TICKS_DB = [0, 0.1, 0.3, 1, 3, 10, 30, 100];
+    const LOSS_TICKS_SHOWN = 6;
+    // A lateral profile chart (or the Peak landscape) reaches at most this
+    // far under its top (dB), and up to the threshold once its readings come
+    // this close to it.
+    const PROFILE_SPAN_DB = 40;
+    const NEAR_THRESHOLD_DB = 6;
+
+    // The ticks of a loss axis over [y0, y1] (axis units), labelled in dB:
+    // round losses, at least a sixth of the span apart; on a short span (a
+    // zoomed tilt chart), round dB values instead.
+    function lossTicks(y0, y1) {
+        const minGap = (y1 - y0) / LOSS_TICKS_SHOWN;
+        const text = db => db.toFixed(Math.abs(db) >= 1 || db === 0 ? 0 : 1);
+        const ladder = LOSS_TICKS_DB.flatMap(d => (d ? [d, -d] : [0])).map(db => ({ v: lossAxis(db), db }))
+            .filter(t => t.v >= y0 && t.v <= y1).sort((a, b) => b.v - a.v);
+        const kept = [];
+        ladder.forEach(t => { if (!kept.length || kept[kept.length - 1].v - t.v >= minGap) kept.push(t); });
+        if (kept.length >= 3) return kept.map(t => ({ v: t.v, text: text(t.db) }));
+        const d0 = lossFromAxis(y0);
+        const d1 = lossFromAxis(y1);
+        const nice = Plot3D.niceTicks(d0, d1, 4);
+        const digits = Math.max(0, Math.min(3, -Math.floor(Math.log10(nice.step))));
+        return nice.values.map(db => ({ v: lossAxis(db), text: db.toFixed(digits) }));
+    }
     const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
     // Axes that grow in round steps rather than with every reading: each change
     // animates (some ten redraws), so they should change seldom. `roundUp`: a
@@ -153,45 +200,66 @@
         return `${fmt(watts, unit)} ${unit.name}`;
     }
 
-    // --- Threshold, from /api/context ---------------------------------------------------
+    // --- Source power and threshold, from /api/context ------------------------------------
 
-    let thresholdW = null;  // null until known (no context file, or no such param)
+    // null until known (no context file, or no such param).
+    let sourceW = null;
+    let thresholdDb = null;  // ≤ 0: a loss against the source, whatever the param's sign
 
     function refreshContext() {
         fetch('/api/context', { cache: 'no-store' })
             .then(r => r.json())
             .then(ctx => {
-                const param = ctx.enabled && ctx.params ? ctx.params[THRESHOLD_PARAM] : null;
-                thresholdW = param && isNum(param.value) ? param.value * 1e-3 : null;
+                const value = name => {
+                    const param = ctx.enabled && ctx.params ? ctx.params[name] : null;
+                    return param && isNum(param.value) ? param.value : null;
+                };
+                const source = value(SOURCE_PARAM);
+                const loss = value(THRESHOLD_PARAM);
+                sourceW = source > 0 ? source * 1e-3 : null;
+                thresholdDb = loss !== null ? -Math.abs(loss) : null;
             })
             .catch(() => { /* the hub poll reports a lost connection */ });
     }
 
     // --- Live power tile ------------------------------------------------------------------
 
+    // Big: the loss against the source (dB). Under it, the reading and the
+    // source; then the threshold, in dB and in watts, and the margin to it.
     function renderPower(state) {
         const samples = state.channels.power;
         const last = samples.length ? samples[samples.length - 1] : null;
         const fresh = last && state.now !== null && state.now - last[0] <= STALE_S;
         const watts = fresh && isNum(last[1]) ? last[1] : null;
+        const thresholdW = sourceW !== null && thresholdDb !== null ? sourceW * 10 ** (thresholdDb / 10) : null;
         const known = watts !== null && thresholdW !== null;
 
-        if (watts !== null) {
+        if (watts === null) {
+            $('power-now').textContent = '—';
+            $('power-unit').textContent = '';
+        } else if (sourceW !== null) {
+            // No power at all (noise around 0 W): no dB to show, the reading says it.
+            const db = watts > 0 ? 10 * Math.log10(watts / sourceW) : null;
+            $('power-now').textContent = db !== null ? signed(db, dbDigits(db)) : '—';
+            $('power-unit').textContent = 'dB';
+        } else {
+            // No source to compare with: the reading itself.
             const unit = unitFor(watts);
             $('power-now').textContent = fmt(watts, unit);
             $('power-unit').textContent = unit.name;
-        } else {
-            $('power-now').textContent = '—';
-            $('power-unit').textContent = '';
         }
-        $('threshold').textContent = thresholdW !== null ? withUnit(thresholdW) : 'not set';
-        $('margin').textContent = known && watts > 0 && thresholdW > 0 ? `(${signed(dbOf(watts, thresholdW))} dB)` : '';
+        $('power-watts').textContent = watts === null ? '' : sourceW !== null
+            ? `${withUnit(watts)} of ${withUnit(sourceW)} source` : withUnit(watts);
+        $('threshold').textContent = thresholdDb !== null ? dbText(thresholdDb) : 'not set';
+        $('threshold-w').textContent = thresholdW !== null ? `(${withUnit(thresholdW)})` : '';
+        $('margin').textContent = known && watts > 0 ? ` · ${dbText(dbOf(watts, thresholdW))}` : '';
 
         const card = $('power-card');
         card.classList.toggle('above', known && watts >= thresholdW);
         card.classList.toggle('below', known && watts < thresholdW);
         $('power-state').textContent = watts === null ? 'Waiting for the power meter…'
-            : thresholdW === null ? `No threshold: add ${THRESHOLD_PARAM} to context.yaml`
+            : sourceW === null ? `No source power: add ${SOURCE_PARAM} to context.yaml`
+            : thresholdDb === null ? `No threshold: add ${THRESHOLD_PARAM} to context.yaml`
             : watts >= thresholdW ? 'Above threshold' : 'Below threshold';
     }
 
@@ -206,12 +274,23 @@
         return best;
     }
 
+    // A run's threshold against its source (dB): as announced, else from its
+    // watts (a run recorded before it was announced).
+    function thresholdDbOf(d) {
+        if (isNum(d.threshold_db)) return d.threshold_db;
+        return d.threshold_w > 0 && d.source_power_w > 0 ? 10 * Math.log10(d.threshold_w / d.source_power_w) : null;
+    }
+
+    // A run's power against its source (dB).
+    const runDb = (run, watts) => lossDb(watts, run.source_w);
+
     function fromResult(result, t) {
         return {
             key: `result:${t}`,
             status: result.error ? 'error' : 'done',
             fiber: result.fiber,
             threshold_w: result.threshold_w,
+            threshold_db: thresholdDbOf(result),
             source_w: result.source_power_w,
             timeout_s: result.timeout_s,
             phases: result.phase_names || [],
@@ -273,6 +352,7 @@
             status: end ? (end.data.error ? 'error' : 'done') : 'running',
             fiber: d.fiber,
             threshold_w: d.threshold_w,
+            threshold_db: thresholdDbOf(d),
             source_w: d.source_power_w,
             timeout_s: d.timeout_s,
             phases: d.phases || [],
@@ -349,16 +429,17 @@
             const best = maxOf(run.samples.map(s => s[POWER]));
             verdict.className = 'verdict live';
             verdict.textContent = 'Aligning…';
-            sub.textContent = `${run.samples.length} readings${isNum(best) ? ` · best so far ${withUnit(best)}` : ''}`;
+            sub.textContent = `${run.samples.length} readings${isNum(best) ? ` · best so far ${dbText(runDb(run, best))}` : ''}`;
         } else if (run.status === 'error') {
             verdict.className = 'verdict ng';
             verdict.textContent = '✗ Interrupted';
             sub.textContent = run.error || '';
         } else {
             verdict.className = `verdict ${r.passed ? 'ok' : 'ng'}`;
-            verdict.textContent = `${r.passed ? '✓ Aligned' : '✗ Below threshold'} · ${withUnit(r.power_w)}`;
-            const coupling = r.power_w > 0 && run.source_w > 0 ? ` · ${signed(dbOf(r.power_w, run.source_w), 2)} dB vs source` : '';
-            sub.textContent = `threshold ${withUnit(run.threshold_w)}${coupling} · ${readsOf(run)} readings`
+            const power = run.source_w > 0 ? dbText(runDb(run, r.power_w)) : withUnit(r.power_w);
+            verdict.textContent = `${r.passed ? '✓ Aligned' : '✗ Below threshold'} · ${power}`;
+            const source = run.source_w > 0 ? ` of ${withUnit(run.source_w)} source` : '';
+            sub.textContent = `${withUnit(r.power_w)}${source} · threshold ${dbText(run.threshold_db)} · ${readsOf(run)} readings`
                 + (r.timed_out ? ' · timed out' : '');
         }
         sub.title = sub.textContent;
@@ -429,15 +510,21 @@
     // over the surface's dB range, with a colour bar), the best reading, and
     // optionally a trail on the floor. Axes fit the data, only grow within
     // one `key`, and animate. Until the first reading, it shows only a message.
-    function landscape(canvas, cam, message) {
-        const plot = Plot3D.create(canvas, cam, { fontPx: FONT_PX });
+    // `db`: the height is the loss against the source on the log loss axis
+    // (lossAxis), and the colour bar reads in dB.
+    function landscape(canvas, cam, message, { db = false } = {}) {
+        const plot = Plot3D.create(canvas, cam, { fontPx: FONT_PX, zTicks: db ? lossTicks : null });
         let unit = UNITS[1];
+        let source = 1e-3;  // with `db`, what 0 dB is (W)
         let threshold = null;
         let key = null;
         let ranges = null;
         let built = { key: null, shape: '', at: 0 };
         let domain = null;  // [low, high] watts the colours span
-        plot.setColor(z => heatColor(domain, z * unit.scale));
+        // A plotted height, in watts: the colours are set in watts.
+        const wattsOf = z => (db ? source * 10 ** (lossFromAxis(z) / 10) : z * unit.scale);
+        const powerText = watts => (db ? dbText(lossDb(watts, source)) : withUnit(watts));
+        plot.setColor(z => heatColor(domain, wattsOf(z)));
         plot.setMessage(message);
 
         function extent(values, minSpan) {
@@ -476,22 +563,41 @@
                 const r = { x: roundOut(extent(pts.map(p => p[0]), o.minSpan)), y: roundOut(extent(pts.map(p => p[1]), o.minSpan)) };
                 ranges = key === o.key && ranges ? { x: union(ranges.x, r.x), y: union(ranges.y, r.y) } : r;
                 key = o.key;
-                // Up to the threshold once the readings come within a tenth of it:
-                // before that (no light yet), the readings' own scale, at least
-                // o.minTop (the level counted as light, so that noise stays flat).
-                const peak = maxOf(pts.map(p => p[2]), 0);
-                const top = Math.max(threshold > 0 && peak >= 0.1 * threshold ? Math.max(threshold, peak) : peak, o.minTop || 0);
-                unit = unitFor(top || 1e-3);
-                const zTop = roundUp(((top || 1e-3) / unit.scale) * 1.1);
-                plot.setLabels({ x: `${o.names[0]} (${o.unit})`, y: `${o.names[1]} (${o.unit})`, z: `Power (${unit.name})` });
-                plot.setAxes({ x: ranges.x, y: ranges.y, z: [0, zTop] }, AXES_ANIM_MS);
-                // A reading under zero is the meter's noise: drawn on the floor.
-                const pts3 = pts.map(([u, v, w]) => [u, v, Math.max(0, w) / unit.scale]);
+                let zRange;
+                let pts3;
+                if (db) {
+                    // As a lateral profile chart: up to the threshold once the
+                    // readings come within NEAR_THRESHOLD_DB of it, down to the
+                    // lowest (PROFILE_SPAN_DB at most, 1 dB at least). A reading
+                    // under the axis (no power) is drawn on its floor.
+                    source = o.source > 0 ? o.source : 1e-3;
+                    const dbs = pts.map(p => lossDb(p[2], source));
+                    const best = maxOf(dbs, DB_FLOOR);
+                    const thr = o.thresholdDb;
+                    const topDb = isNum(thr) && best >= thr - NEAR_THRESHOLD_DB ? Math.max(thr, best) : best;
+                    const lowDb = Math.max(minOf(dbs, topDb - 1), topDb - PROFILE_SPAN_DB);
+                    const [a0, a1] = [lossAxis(lowDb), lossAxis(topDb)];
+                    zRange = [a0 - (a1 - a0) * 0.05, a1 + (a1 - a0) * 0.1];
+                    pts3 = pts.map(([u, v], i) => [u, v, Math.max(zRange[0], lossAxis(dbs[i]))]);
+                    plot.setLabels({ x: `${o.names[0]} (${o.unit})`, y: `${o.names[1]} (${o.unit})`, z: 'dB vs source (log)' });
+                } else {
+                    // Up to the threshold once the readings come within a tenth of it:
+                    // before that (no light yet), the readings' own scale, at least
+                    // o.minTop (the level counted as light, so that noise stays flat).
+                    const peak = maxOf(pts.map(p => p[2]), 0);
+                    const top = Math.max(threshold > 0 && peak >= 0.1 * threshold ? Math.max(threshold, peak) : peak, o.minTop || 0);
+                    unit = unitFor(top || 1e-3);
+                    zRange = [0, roundUp(((top || 1e-3) / unit.scale) * 1.1)];
+                    // A reading under zero is the meter's noise: drawn on the floor.
+                    pts3 = pts.map(([u, v, w]) => [u, v, Math.max(0, w) / unit.scale]);
+                    plot.setLabels({ x: `${o.names[0]} (${o.unit})`, y: `${o.names[1]} (${o.unit})`, z: `Power (${unit.name})` });
+                }
+                plot.setAxes({ x: ranges.x, y: ranges.y, z: zRange }, AXES_ANIM_MS);
                 plot.setPoints(pts3, { tail: o.tail || 150 });
 
                 // Rebuilt at once for a new key, else at most every
                 // SURFACE_REBUILD_MS, when the readings or the axes changed.
-                const shape = `${ranges.x}|${ranges.y}|${unit.name}|${pts3.length}`;
+                const shape = `${ranges.x}|${ranges.y}|${db ? zRange : unit.name}|${pts3.length}`;
                 const now = performance.now();
                 if (o.key !== built.key || (shape !== built.shape && now - built.at > SURFACE_REBUILD_MS)) {
                     const surface = pts3.length >= 3
@@ -501,12 +607,12 @@
                     // The colours span what the surface shows, else the readings
                     // (and up to o.minTop, as the height).
                     const shown = surface ? surface.z.flat().filter(isNum) : pts3.map(p => p[2]);
-                    domain = heatDomain(shown.map(z => z * unit.scale).concat(o.minTop ? [o.minTop] : []));
+                    domain = heatDomain(shown.map(wattsOf).concat(o.minTop ? [o.minTop] : []));
                     // Marks on the colour bar: the threshold, and any level the phase uses (e.g. "light").
                     const marks = [{ watts: threshold, text: 'threshold' }].concat(o.marks || [])
                         .filter(m => domain && m.watts > domain[0] && m.watts < domain[1])
                         .map(m => ({ f: heatFraction(domain, m.watts), text: m.text }));
-                    plot.setLegend(domain && { stops: HEAT, low: withUnit(domain[0]), high: withUnit(domain[1]), marks });
+                    plot.setLegend(domain && { stops: HEAT, low: powerText(domain[0]), high: powerText(domain[1]), marks });
                     built = { key: o.key, shape, at: now };
                 }
                 let best = null;
@@ -530,8 +636,8 @@
     // --- 2D charts ---------------------------------------------------------------------------------
 
     const trace = Chart2D.create($('chart-trace'), {
-        fontPx: FONT_PX, xLabel: 'time (s)', yLabel: 'dB vs threshold', message: 'Waiting for an alignment…',
-        onChange: Plot3D.requestFrame,
+        fontPx: FONT_PX, xLabel: 'time (s)', yLabel: 'dB vs source (log)', message: 'Waiting for an alignment…',
+        onChange: Plot3D.requestFrame, yTicks: lossTicks,
     });
 
     // Everything drawn: the trace, then the plot cards' plots (refilled when the
@@ -569,8 +675,8 @@
     }
 
     function renderTrace(run) {
-        const thr = run.threshold_w;
-        const points = run.samples.filter(s => isNum(s[POWER]) && isNum(s[T])).map(s => [s[T], dbOf(s[POWER], thr)]);
+        const thr = isNum(run.threshold_db) ? run.threshold_db : 0;
+        const points = run.samples.filter(s => isNum(s[POWER]) && isNum(s[T])).map(s => [s[T], runDb(run, s[POWER])]);
         // Best so far, as steps.
         const bestLine = [];
         let best = -Infinity;
@@ -582,9 +688,14 @@
         });
         if (points.length) bestLine.push([points[points.length - 1][0], best]);
         const dbs = points.map(p => p[1]);
-        const lo = Math.max(-45, Math.min(-10, Math.floor((minOf(dbs, 0) - 2) / 5) * 5));
-        // 10 dB over the threshold at least: room for the phase names and the threshold's label above its line.
-        const hi = Math.max(10, Math.ceil((maxOf(dbs, 0) + 2) / 5) * 5);
+        // On the loss axis (lossAxis): down to the readings (10 to 45 dB under
+        // the threshold, in steps of 5 dB), up to the threshold or the best
+        // reading, and a quarter of the span over it: room for the phase
+        // names and the threshold's label above its line.
+        const step5 = (v, round) => round(v / 5) * 5;
+        const lo = lossAxis(Math.max(step5(thr - 45, Math.floor), Math.min(step5(thr - 10, Math.floor), step5(minOf(dbs, thr) - 2, Math.floor))));
+        const top = lossAxis(Math.max(thr, maxOf(dbs, thr)));
+        const hi = top + (top - lo) * 0.25;
         const tMax = roundUp(Math.max(10, run.elapsed, maxOf(points.map(p => p[0]), 0)) * 1.05);
         const bands = run.phaseLog.map((p, i) => ({
             x0: p.t0,
@@ -593,15 +704,16 @@
             color: i % 2 ? 'rgba(59, 184, 255, 0.07)' : 'rgba(93, 239, 191, 0.07)',
         }));
         const last = points[points.length - 1];
+        const onAxis = list => list.map(([t, db]) => [t, lossAxis(db)]);
         trace.setRange({ x: [0, tMax], y: [lo, hi] }, AXES_ANIM_MS);
         trace.setData({
             series: [
-                { points: envelope(points, TRACE_SLICES), color: SOFT, width: 1, alpha: 0.55 },
-                { points: bestLine, color: ACCENT, width: 2.4 },
+                { points: onAxis(envelope(points, TRACE_SLICES)), color: SOFT, width: 1, alpha: 0.55 },
+                { points: onAxis(bestLine), color: ACCENT, width: 2.4 },
             ],
             bands,
-            hlines: [{ y: 0, color: ACCENT, dash: [6, 4], label: 'threshold' }],
-            markers: last && run.status === 'running' ? [{ x: last[0], y: last[1], color: YELLOW }] : [],
+            hlines: [{ y: lossAxis(thr), color: ACCENT, dash: [6, 4], label: `threshold ${dbText(thr)}` }],
+            markers: last && run.status === 'running' ? [{ x: last[0], y: lossAxis(last[1]), color: YELLOW }] : [],
         });
     }
 
@@ -615,12 +727,14 @@
 
     // "312 readings · best 94.48 µW" for a card's title line. Once the phase
     // is over, its own count: the points of a reloaded run are decimated.
-    // `still`: the best of the readings at rest only.
-    function phaseNumbers(run, phase, count, still = false) {
+    // `still`: the best of the readings at rest only. `db`: the best in dB
+    // against the source, as the card plots it.
+    function phaseNumbers(run, phase, count, still = false, db = false) {
         const samples = run.samples.filter(s => s[PHASE] === phase.index);
         const reads = phase.status !== 'running' && isNum(phase.reads) ? phase.reads : samples.length;
         const best = maxOf(samples.filter(s => !still || s[STILL]).map(s => s[POWER]));
-        return `${count || `${reads} readings`}${isNum(best) ? ` · best ${withUnit(best)}` : ''}`;
+        const shown = db && run.source_w > 0 ? dbText(runDb(run, best)) : withUnit(best);
+        return `${count || `${reads} readings`}${isNum(best) ? ` · best ${shown}` : ''}`;
     }
 
     // A "map" card: the phase's readings as a 3D landscape over two axes.
@@ -677,7 +791,7 @@
                 const atStart = last && last.around === 'remembered pose' ? 'light at the remembered pose' : 'light at the start';
                 let light = !last ? null : last.found ? `light found · ${how}` : how;
                 if (last && last.full) {
-                    // A full search runs both spirals to the end, light at the start or not.
+                    // A full search runs both scans to the end, light at the start or not.
                     const first = acquire.find(a => a.found);
                     light = `full search · ${!last.found ? how : last.warm ? atStart
                         : `light found · ${SEARCH_NAMES[first.search] || 'search'}${around(first)}`}`;
@@ -690,8 +804,8 @@
         };
     }
 
-    // The fitted curve of a profile, sampled across its span, in `unit`.
-    function fitCurve(profile, unit) {
+    // The fitted curve of a profile, sampled across its span, in dB against `source`.
+    function fitCurve(profile, source) {
         const f = profile.fit;
         if (!f || !isNum(f.center) || !isNum(f.width) || !(f.width > 0) || !isNum(f.peak)) return null;
         const [lo, hi] = profile.span;
@@ -700,7 +814,7 @@
             : x => (f.baseline || 0) + (f.peak - (f.baseline || 0)) * Math.exp((-2 * (x - f.center) ** 2) / f.width ** 2);
         return Array.from({ length: CURVE_POINTS + 1 }, (_, k) => {
             const x = lo + ((hi - lo) * k) / CURVE_POINTS;
-            return [x, at(x) / unit.scale];
+            return [x, lossDb(at(x), source)];
         });
     }
 
@@ -713,7 +827,9 @@
     }
 
     // One profile chart: the latest scans along `axis` (newest bright: forward
-    // green, backward blue), the fitted curve and the chosen point in yellow.
+    // green, backward blue), the fitted curve and the chosen point in yellow,
+    // in dB against the source, on a log scale of the loss (lossAxis).
+
     function drawProfile(chart, axis, list, run, phase) {
         const spec = AXES[axis];
         if (!list.length) {
@@ -724,35 +840,51 @@
         }
         const latest = list[list.length - 1];
         const shown = list.slice(-PROFILES_SHOWN);
-        const powers = shown.flatMap(p => p.passes.flatMap(q => q.points.map(pt => pt[1])));
-        // A tilt changes the power by a few percent only: zoom on the readings.
-        // A lateral scan crosses the whole peak: from 0, up to the threshold.
+        const src = run.source_w > 0 ? run.source_w : 1e-3;
+        const thr = run.threshold_db;
+        const dbs = shown.flatMap(p => p.passes.flatMap(q => q.points.map(pt => pt[1]))).filter(isNum).map(w => lossDb(w, src));
+        // A tilt changes the power by a few tenths of a dB only: zoom on the
+        // latest round (earlier ones, far under it, run off the chart). A
+        // lateral scan crosses the whole peak, down to its tails
+        // (PROFILE_SPAN_DB at most): up to the threshold once it comes within
+        // NEAR_THRESHOLD_DB of it, else its own top, so that it fills the chart.
         const zoom = spec.unit === '°';
-        const top = (zoom ? maxOf(powers, 0) : Math.max(run.threshold_w || 0, maxOf(powers, 0))) || 1e-3;
-        const unit = unitFor(top);
-        const low = zoom ? minOf(powers, top) : 0;
-        const margin = zoom ? Math.max((top - low) * 0.2, top * 0.005) : top * 0.1;
+        let range;
+        if (zoom) {
+            const newest = latest.passes.flatMap(q => q.points.map(pt => pt[1])).filter(isNum).map(w => lossDb(w, src));
+            const best = maxOf(newest);
+            const top = isNum(best) ? best : isNum(thr) ? thr : 0;
+            const low = minOf(newest, top);
+            const margin = Math.max((top - low) * 0.2, 0.05);
+            range = [lossAxis(low - margin), lossAxis(top + margin)];
+        } else {
+            const best = maxOf(dbs, DB_FLOOR);
+            const top = isNum(thr) && best >= thr - NEAR_THRESHOLD_DB ? Math.max(thr, best) : best;
+            const low = Math.max(minOf(dbs, top - 10), top - PROFILE_SPAN_DB);
+            const [a0, a1] = [lossAxis(low), lossAxis(top)];
+            range = [a0 - (a1 - a0) * 0.04, a1 + (a1 - a0) * 0.12];
+        }
         const series = [];
         shown.forEach((p, i) => {
             const newest = i === shown.length - 1;
             p.passes.forEach(q => series.push({
-                points: q.points.filter(pt => isNum(pt[0]) && isNum(pt[1])).map(([c, w]) => [c, w / unit.scale]),
+                points: q.points.filter(pt => isNum(pt[0]) && isNum(pt[1])).map(([c, w]) => [c, lossAxis(lossDb(w, src))]),
                 color: newest ? (q.dir < 0 ? BLUE : ACCENT) : SOFT,
                 alpha: newest ? 1 : 0.12 + (0.45 * (i + 1)) / shown.length,
                 width: newest ? 2 : 1.2,
                 dots: newest,
             }));
         });
-        const curve = fitCurve(latest, unit);
-        if (curve) series.push({ points: curve, color: YELLOW, width: 1.6, alpha: 0.9 });
+        const curve = fitCurve(latest, src);
+        if (curve) series.push({ points: curve.map(([x, db]) => [x, lossAxis(db)]), color: YELLOW, width: 1.6, alpha: 0.9 });
         const [lo, hi] = latest.span;
         const pad = (hi - lo) * 0.04 || 1;
-        chart.setLabels({ x: profileLabel(spec, latest), y: `Power (${unit.name})` });
-        chart.setRange({ x: [lo - pad, hi + pad], y: [Math.max(0, low - margin) / unit.scale, (top + margin) / unit.scale] }, AXES_ANIM_MS);
+        chart.setLabels({ x: profileLabel(spec, latest), y: 'dB vs source (log)' });
+        chart.setRange({ x: [lo - pad, hi + pad], y: range }, AXES_ANIM_MS);
         chart.setData({
             series,
             vlines: isNum(latest.chosen) ? [{ x: latest.chosen, color: YELLOW, dash: [4, 4] }] : [],
-            hlines: run.threshold_w ? [{ y: run.threshold_w / unit.scale, color: ACCENT, dash: [6, 4], label: 'threshold' }] : [],
+            hlines: isNum(thr) ? [{ y: lossAxis(thr), color: ACCENT, dash: [6, 4], label: 'threshold' }] : [],
         });
     }
 
@@ -770,6 +902,7 @@
                 axis,
                 chart: Chart2D.create(canvas, {
                     fontPx: FONT_PX - 1, message: `Waiting for ${AXES[axis].name} scans…`, onChange: Plot3D.requestFrame,
+                    yTicks: lossTicks,
                 }),
             };
         });
@@ -781,7 +914,7 @@
                 const scans = ran(phase) ? inPhase(run.published.profile, phase) : [];
                 charts.forEach(({ axis, chart }) => drawProfile(chart, axis, scans.filter(p => p.axis === axis), run, phase));
                 if (!ran(phase)) return '';
-                return phaseNumbers(run, phase, phase.status === 'running' ? `scan ${scans.length}` : plural(scans.length, 'scan'));
+                return phaseNumbers(run, phase, phase.status === 'running' ? `scan ${scans.length}` : plural(scans.length, 'scan'), false, true);
             },
         };
     }
@@ -789,13 +922,21 @@
     // A "peak" card: the phase's readings at rest, with those of its lateral
     // gradient circles ("gradient" payloads, kind "cart"), as a 3D landscape;
     // the centre of each lateral circle then of each pattern iteration as a
-    // trail on its floor; and every step, in widths (lateral or tilt), in
-    // the order taken: the circles' first, then the pattern's.
+    // trail on its floor; and every step, in the order taken (the circles'
+    // first, then the pattern's): lateral ones in µm, tilt ones in m°.
     const STEP_SERIES = [
-        { key: 'angle', text: 'tilt circles', color: BLUE },
-        { key: 'lateral', text: 'lateral circles', color: SOFT },
-        { key: 'pattern', text: 'pattern', color: ACCENT },
+        { key: 'angle', text: 'tilt circles', unit: 'm°', color: BLUE },
+        { key: 'lateral', text: 'lateral circles', unit: 'µm', color: SOFT },
+        { key: 'pattern', text: 'pattern', unit: 'µm', color: ACCENT },
     ];
+
+    // How far a step went: a gradient circle's `step` is in its own unit (µm,
+    // or ° for a tilt circle: shown in m°); a pattern iteration gives step_um.
+    function stepSize(p) {
+        if (isNum(p.step_um)) return p.step_um;
+        if (!Array.isArray(p.step) || !p.step.every(isNum)) return null;
+        return Math.hypot(p.step[0], p.step[1]) * (p.unit === '°' ? 1000 : 1);
+    }
 
     function renderPeak(view, name) {
         const axes = (view.axes || DEFAULT_VIEW.axes).map(a => AXES[a] || AXES.x);
@@ -805,20 +946,26 @@
         canvas.className = 'peak-map';
         const title = document.createElement('div');
         title.className = 'sub-title';
-        title.append('Steps, in widths: ');
+        title.append('Steps: ');
         STEP_SERIES.forEach((s, i) => {
             const key = document.createElement('span');
             key.style.color = s.color;
-            key.textContent = `${i ? ' · ' : ''}${s.text}`;
+            key.textContent = `${i ? ' · ' : ''}${s.text} `;
+            // The title is set in capitals: "µm" would read "ΜM", like mm.
+            const unit = document.createElement('span');
+            unit.className = 'unit';
+            unit.textContent = `(${s.unit})`;
+            key.append(unit);
             title.append(key);
         });
         const stepsCanvas = document.createElement('canvas');
         stepsCanvas.className = 'peak-steps';
         body.append(canvas, title, stepsCanvas);
         const waiting = `Waiting for ${name}…`;
-        const plot = landscape(canvas, cam, waiting);
+        // Near the peak, in dB on the log loss axis: the last tenths of a dB show.
+        const plot = landscape(canvas, cam, waiting, { db: true });
         const chart = Chart2D.create(stepsCanvas, {
-            fontPx: FONT_PX - 1, xLabel: 'step', yLabel: 'step (widths)', message: 'No step yet',
+            fontPx: FONT_PX - 1, xLabel: 'step', yLabel: 'size (µm, m°)', message: 'No step yet',
             onChange: Plot3D.requestFrame,
         });
         return {
@@ -848,21 +995,22 @@
                     points: project(run.samples.filter(s => s[PHASE] === phase.index && (s[STILL] || s[KIND] === 'cart')), axes),
                     names: axes.map(a => a.name), unit: axes[0].unit, minSpan: 4,
                     // The latest pattern (or circle) stands out, whatever its size.
-                    threshold: run.threshold_w, n: 24, sigmaCells: 2.2,
+                    threshold: run.threshold_w, thresholdDb: run.threshold_db, source: run.source_w, n: 24, sigmaCells: 2.2,
                     tail: lastStep && lastStep.points ? lastStep.points.length : lastCircle ? lastCircle.readings : 9,
                     floorPath: trail,
                 });
                 const series = Object.fromEntries(STEP_SERIES.map(s => [s.key, []]));
                 circles.concat(steps).forEach((p, i) => {
                     const list = series[p.search || 'pattern'];
-                    if (list && isNum(p.step_widths)) list.push([i + 1, p.step_widths]);
+                    const size = stepSize(p);
+                    if (list && isNum(size)) list.push([i + 1, size]);
                 });
                 const count = circles.length + steps.length;
                 const top = maxOf(STEP_SERIES.flatMap(s => series[s.key].map(p => p[1])), 0);
-                chart.setRange({ x: [0.5, Math.max(2, count) + 0.5], y: [0, Math.max(0.05, top) * 1.2] }, AXES_ANIM_MS);
+                chart.setRange({ x: [0.5, Math.max(2, count) + 0.5], y: [0, Math.max(1, top) * 1.2] }, AXES_ANIM_MS);
                 chart.setData({ series: STEP_SERIES.map(s => ({ points: series[s.key], color: s.color, width: 2, dots: true })) });
                 const iterations = phase.status === 'running' ? `iter ${steps.length}` : plural(steps.length, 'iteration');
-                return phaseNumbers(run, phase, `${iterations}${circles.length ? ` · ${plural(circles.length, 'circle')}` : ''}`, true);
+                return phaseNumbers(run, phase, `${iterations}${circles.length ? ` · ${plural(circles.length, 'circle')}` : ''}`, true, true);
             },
         };
     }

@@ -13,14 +13,15 @@ through the rack in order.
 | 1 | Pick fiber | robot program `fiber<N>_in`, gripper closes, `fiber<N>_out` |
 | 2 | Move to alignment start | robot program `align_start` |
 | 3 | Align fiber | alignment algorithm (see below): robot moves from Python + power meter |
-| 4 | Retract from alignment | robot program `align_retract` |
-| 5 | Place fiber (into the slot it was picked from) | robot program `fiber<N>_in`, gripper opens, `fiber<N>_out` |
+| 4 | Hold final position | the fiber stays where the alignment left it for `hold_final_s` (5 s), the power read every 0.5 s; the log gives its drift in dB. 0 skips it |
+| 5 | Retract from alignment | robot program `align_retract` |
+| 6 | Place fiber (into the slot it was picked from) | robot program `fiber<N>_in`, gripper opens, `fiber<N>_out` |
 
 A fiber that does not reach the threshold is still put back and counted in
 `failed_count`, and the loop moves on to the next fiber.
 
 An error while the fiber is at the alignment station (in Move to alignment
-start, Random offset, Align or Retract) does not stop production either.
+start, Random offset, Align, Hold or Retract) does not stop production either.
 Typical causes are a software error, or a reply from the robot or the meter
 that never came. The fiber is retracted (`align_retract`), put back into its
 slot, and the loop goes on with the next fiber. The error is counted in
@@ -41,7 +42,8 @@ a random start. Nothing is picked or placed, and `next_fiber` stays as it is.
 | 1 | Move to alignment start | robot program `align_start` |
 | 2 | Random offset | `MoveLinRelTrf`: X/Z up to `random_offset_um` (300 µm), Rx/Rz up to `random_offset_deg` (1°), drawn evenly over a disc; never along or about the fiber (Y) |
 | 3 | Align fiber | the alignment, from the offset pose |
-| 4 | Retract from alignment | robot program `align_retract` |
+| 4 | Hold final position | as in the full cycle; skipped when the search found no light |
+| 5 | Retract from alignment | robot program `align_retract` |
 
 `aligned_count` / `failed_count` then give the success rate. A search that
 finds no light counts as failed and the fiber still retracts; it does not
@@ -102,7 +104,7 @@ They run at the speeds set in the Variables tab unless they set their own.
 | `fiber_alignment/runlog.py` | A CSV row per alignment-only run: its random offset, how the light was found, each phase, the result |
 | `fiber_alignment/fit.py` | Its curve fits: Gaussian profiles, parabolas and quadratics in log power |
 | `fiber_alignment/frames.py` | Frame math from the colleague's script (poses ↔ 4×4 matrices) |
-| `custom_view/` | `/view/`: live power vs threshold (green/red), the verdict, and a plot per alignment phase (see below) |
+| `custom_view/` | `/view/`: live power in dB against the source and the threshold (green/red), the verdict, and a plot per alignment phase (see below) |
 | `tests/fiber_alignment/`, `tools/` | A simulated cell, the tests run on it, and a replay of a run into the custom view (see below). Development only: `.dockerignore` keeps them out of the image |
 
 ## To do before running on the cell
@@ -110,7 +112,7 @@ They run at the speeds set in the Variables tab unless they set their own.
 - [ ] Write the robot programs above in the web portal, taught with `TOOL_TRF` active.
 - [ ] Teach `TOOL_TRF` and the home/shipment joints in `fiber_alignment/poses.py`, then set `POSES_TAUGHT = True`. Until then, every robot move is refused.
 - [ ] `config.yaml`: the robot's IP address. The power meter's `wavelength` (1557 nm, from the colleague's script) should match the source.
-- [ ] `context.yaml`: `source_power_mw`, the laser's output measured fiber to meter, and `power_threshold_mw`, 0.5–1 dB under the peak power measured on the setup (0.65 mW: the cell peaked at 0.76 mW on 2026-10-28). With an air gap a perfect alignment loses ~7 % to the two glass/air faces: about 0.93 mW from 1 mW.
+- [ ] `context.yaml`: `source_power_mw`, the laser's output measured fiber to meter, and `power_threshold_db`, the loss against it an alignment may have and still pass (−0.4 dB: 0.912 mW from 1 mW). With an air gap a perfect alignment loses ~7 % to the two glass/air faces: about 0.93 mW from 1 mW (−0.32 dB); the cell's 396 passed runs of 2026-11-06 ended at 0.915–0.948 mW.
 - [ ] Check `align_range_um` / `align_range_deg`: any pose the algorithm asks for beyond them is refused, which faults the alignment. The alignment refuses to start when `acquire_radius_um`, `acquire_ring_um` or `acquire_radius_deg` does not fit in the window.
 - [ ] `lateral_width_um` / `angle_width_deg`: how wide the coupling is, as starting guesses (every alignment re-measures them). The defaults come from the cell's collimated ends (alignment of 2026-10-27: ~240 µm; 2026-10-28: ~0.19° in tilt).
 - [ ] Every param persists: a value edited in the Variables tab survives a restart, but then a new `default` in `context.yaml` does not apply to it until you press Reset on it (Variables tab). After pulling new defaults, Reset the params you have not tuned on purpose.
@@ -215,9 +217,13 @@ Laid out for a 1920×1080 screen, read from a distance. It stacks on narrower
 screens.
 
 - **Top row** (about a fifth of the screen's height):
-  - the live meter reading, green at or above `power_threshold_mw`, red below;
-  - the power over time in dB vs the threshold (best so far in green), with
-    a band per phase;
+  - the live meter reading as a loss against the source in dB
+    (`source_power_mw`), with the reading itself, the source and the
+    threshold (`power_threshold_db`, and in µW); green at or above the
+    threshold, red below, with the margin to it;
+  - the power over time in dB vs the source, on the same log scale of the
+    loss as the Center and Angle charts (best so far in green, the threshold
+    dashed), with a band per phase;
   - the alignment: the verdict, the time spent against `align_timeout_s`,
     and one line per phase with its gain in dB and its duration.
 - **Plots, side by side**: one card per phase of the algorithm, in order,
@@ -240,11 +246,22 @@ screens.
   - Center: the latest X and Z scans, both directions (green forward, blue
     backward), the fitted Gaussian and the centre chosen, in yellow.
   - Angle: the power against each tilt with its parabola and the beam's
-    walk per degree, and the lateral re-centring scans.
+    walk per degree, zoomed on the latest round, and the lateral re-centring
+    scans.
+  - Center and Angle plot dB against the source on a log scale of the loss
+    (ticks −0.3, −1, −3, −10, −30), as the power over time does: the last
+    dB under the source takes as much room as the 40 under it, so small
+    differences near the peak and the threshold show. A lateral chart fits its scans, and reaches up to
+    the threshold once they come within 6 dB of it.
+  - Acquire stays in µW: its landscape rises to the peak. Peak's landscape
+    is in dB against the source on the same log scale of the loss as the
+    charts, so the last tenths of a dB around the top show; its colour bar
+    reads in dB too.
   - Peak: the readings at rest and those of the lateral gradient circles as
     a 3D landscape, with the centre of each lateral circle and pattern
-    iteration on its floor; and every step in widths, in order (tilt
-    circles blue, lateral circles pale green, pattern green). Its line
+    iteration on its floor; and the size of every step, in order: tilt
+    circles in m° (blue), lateral circles (pale green) and the pattern
+    (green) in µm. Its line
     counts the pattern's iterations and the circles, and gives the best
     reading at rest.
   - Colours span the dB range of the plot. A colour bar gives the values and

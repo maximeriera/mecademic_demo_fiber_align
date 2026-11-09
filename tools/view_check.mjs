@@ -9,8 +9,10 @@
 //    charts, and every phase row inside the alignment card.
 // 2. While a phase runs, its card is the active one and draws its readings,
 //    and a map declared "until_end" (Acquire) keeps taking new readings.
-// 3. The verdict shows the alignment's final power, pass or fail, and the
-//    coupling against the source; every phase is listed as done.
+// 3. The verdict shows the alignment's final power as a loss against the
+//    source (dB), pass or fail, then the power, the source and the threshold
+//    in dB; every phase is listed as done. The live tile shows the power in
+//    dB against the source, the source and the threshold in dB.
 // 4. Each card's line shows what the phase did (light found, a full search,
 //    scans, iterations), the Acquire map is over the axes of the search that
 //    found the light, and the peak card's best is the best reading at rest.
@@ -63,6 +65,10 @@ function withUnit(watts) {
     const a = Math.abs(v);
     return `${v.toFixed(a >= 100 ? 1 : a >= 10 ? 2 : 3)} ${unit.name}`;
 }
+// As view.js formats a loss against the source.
+const signed = (v, digits) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(digits)}`;
+const dbText = db => `${signed(db, Math.abs(db) < 10 ? 2 : 1)} dB`;
+const lossDb = (watts, source) => Math.max(-90, 10 * Math.log10(watts / source));
 
 // What the page shows: the cards (phase, type, state, line, ink per canvas), the verdict and the phase list.
 async function snapshot(page) {
@@ -92,6 +98,13 @@ async function snapshot(page) {
             })),
             verdict: document.getElementById('verdict').textContent,
             verdictSub: document.getElementById('verdict-sub').textContent,
+            tile: {
+                value: document.getElementById('power-now').textContent,
+                unit: document.getElementById('power-unit').textContent,
+                watts: document.getElementById('power-watts').textContent,
+                threshold: document.getElementById('threshold').textContent,
+                thresholdW: document.getElementById('threshold-w').textContent,
+            },
             phases: [...document.querySelectorAll('#phase-list li')].map(li => ({
                 state: li.className, text: li.textContent,
             })),
@@ -165,9 +178,18 @@ async function main() {
     shown = await snapshot(page);
     if (final.result) {
         const power = withUnit(final.result.power_w);
-        check(shown.verdict.includes(power) && shown.verdict.includes(final.result.passed ? '✓ Aligned' : '✗ Below threshold'),
-            `verdict "${shown.verdict}" matches the result (${final.result.passed ? 'passed' : 'failed'} at ${power})`);
-        check(/dB vs source/.test(shown.verdictSub), `coupling against the source shown: "${shown.verdictSub}"`);
+        const db = dbText(lossDb(final.result.power_w, final.source_power_w));
+        check(shown.verdict.includes(db) && shown.verdict.includes(final.result.passed ? '✓ Aligned' : '✗ Below threshold'),
+            `verdict "${shown.verdict}" matches the result (${final.result.passed ? 'passed' : 'failed'} at ${db})`);
+        const threshold = `threshold ${dbText(final.threshold_db)}`;
+        check(shown.verdictSub.includes(`${power} of ${withUnit(final.source_power_w)} source`) && shown.verdictSub.includes(threshold),
+            `the power, the source and the ${threshold} shown: "${shown.verdictSub}"`);
+        // The live tile: the latest reading against the source, and the threshold, in dB.
+        const tile = shown.tile;
+        check(tile.unit === 'dB' && /^[+−]\d+\.\d+$/.test(tile.value) && tile.watts.endsWith(`of ${withUnit(final.source_power_w)} source`),
+            `live tile in dB against the source: "${tile.value} ${tile.unit}", "${tile.watts}"`);
+        check(tile.threshold === dbText(final.threshold_db) && tile.thresholdW === `(${withUnit(final.threshold_w)})`,
+            `live tile threshold "${tile.threshold} ${tile.thresholdW}"`);
         check(shown.phases.length === declared.phases.length && shown.phases.every(p => p.state === 'done'),
             `every phase listed as done: ${shown.phases.map(p => p.text).join(' | ')}`);
         check(shown.phasesFit, 'every phase row fits in the alignment card');
@@ -196,7 +218,8 @@ async function main() {
                 check(card.sub.startsWith(iterations), `${card.phase}: "${card.sub}" counts its ${iterations}`);
                 const best = final.best_still;
                 if (best && declared.phases[best[8]] === card.phase) {
-                    check(card.sub.includes(`best ${withUnit(best[6])}`), `${card.phase}: its best is the best reading at rest (${withUnit(best[6])})`);
+                    const shown = dbText(lossDb(best[6], final.source_power_w));
+                    check(card.sub.includes(`best ${shown}`), `${card.phase}: its best is the best reading at rest (${shown})`);
                 }
             }
         });
