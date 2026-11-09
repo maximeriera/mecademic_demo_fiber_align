@@ -103,9 +103,12 @@ def align_fiber(devices: Dict[str, Device], context: AppContext,
         else:
             seed = None
             logger.info("use_remembered_pose is off: the search starts from the current pose.")
+        # The walk the last run measured: the Angle phase reads each tilt at rest with it.
+        walk = memory.remembered_walk(context, logger)
         result = run_alignment(robot, power_meter(devices), context, fiber=fiber, align=algorithm.align,
                                logger=logger, phases=algorithm.PHASES, phase_views=algorithm.PHASE_VIEWS,
-                               seed=seed, on_summary=on_summary)
+                               seed=seed, on_summary=on_summary, walk=walk)
+        memory.remember_walk(context, result.walk, logger)
 
         # In the light, even under the threshold: a better start for this fiber than align_start.
         if math.isfinite(result.power_w) and result.power_w >= AlignmentSettings.from_context(context).signal_detect_w:

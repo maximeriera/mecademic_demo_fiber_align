@@ -228,3 +228,11 @@ accessories_api/
 
 # Runtime values saved by the context (see app_logic/context.yaml)
 *.state.json
+logs/app/
+logs/devices/
+logs/
+logs/app/app.log
+logs/app/app.log
+logs/app/ApplicationController.log
+logs/app/combined.log
+logs/devices/meca_robot.log

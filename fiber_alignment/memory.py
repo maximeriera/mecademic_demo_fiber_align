@@ -15,6 +15,17 @@ A pose is the robot's (mm in the WRF, then degrees, with ``TOOL_TRF``), so it
 stays valid if ``align_start`` is taught again. One remembered with another
 ``TOOL_TRF`` is not used. Reset the variable in the Variables tab (or set it to
 ``{}``) to forget them all.
+
+The walk is remembered too, in the ``tilt_walk`` variable: how far the beam
+moves sideways per degree of tilt (µm/°, for rx and rz), the geometry of the
+cell (in effect, how far the fiber ends are from the TCP), the same for every
+fiber. With it, the Angle phase reads each tilt at rest where the walk puts
+the beam instead of re-centring it with a scan. Every run corrects it::
+
+    {"rx": -271.0, "rz": 341.0, "trf": [...]}
+
+One remembered with another ``TOOL_TRF`` is not used. Reset it after the gap
+between the fibers changed.
 """
 
 from __future__ import annotations
@@ -35,6 +46,10 @@ VARIABLE = "fiber_poses"
 DECIMALS = 4
 #: How far a remembered TOOL_TRF may be from the current one and still count as the same (mm or °).
 TRF_TOLERANCE = 1e-3
+#: The context variable holding the walk, and the largest walk believed (µm/°).
+WALK_VARIABLE = "tilt_walk"
+WALK_MAX_UM_PER_DEG = 5000.0
+WALK_AXES = ("rx", "rz")
 
 
 def remembered_pose(context: AppContext, fiber: int, logger: logging.Logger) -> Optional[Pose6]:
@@ -61,15 +76,44 @@ def remember(context: AppContext, fiber: int, pose: Sequence[float], power_w: fl
     context.set_variable(VARIABLE, json.dumps(memory, sort_keys=True))
 
 
-def _load(context: AppContext, logger: logging.Logger) -> Dict[str, Any]:
-    """The remembered poses by fiber; {} if there are none or the variable is not valid JSON."""
-    text = context.get_variable(VARIABLE, "{}")
+def remembered_walk(context: AppContext, logger: logging.Logger) -> Dict[str, float]:
+    """The walk (µm/° by tilt axis) the last run left, or {} (none yet, invalid, or another TOOL_TRF)."""
+    entry = _load(context, logger, WALK_VARIABLE)
+    trf = _six(entry.get("trf"))
+    if not entry or trf is None or any(abs(a - b) > TRF_TOLERANCE for a, b in zip(trf, poses.TOOL_TRF)):
+        return {}
+    walk = {}
+    for axis in WALK_AXES:
+        try:
+            value = float(entry.get(axis))
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value) and abs(value) <= WALK_MAX_UM_PER_DEG:
+            walk[axis] = value
+    return walk
+
+
+def remember_walk(context: AppContext, walk: Dict[str, float], logger: logging.Logger) -> None:
+    """Keep ``walk`` (µm/° by tilt axis) for the next run, if it has both axes, finite and believable."""
+    values = {}
+    for axis in WALK_AXES:
+        value = walk.get(axis)
+        if not isinstance(value, (int, float)) or not math.isfinite(value) or abs(value) > WALK_MAX_UM_PER_DEG:
+            return
+        values[axis] = round(float(value), 1)
+    values["trf"] = [round(float(v), DECIMALS) for v in poses.TOOL_TRF]
+    context.set_variable(WALK_VARIABLE, json.dumps(values, sort_keys=True))
+
+
+def _load(context: AppContext, logger: logging.Logger, variable: str = VARIABLE) -> Dict[str, Any]:
+    """The JSON object in ``variable``; {} if there is none or it is not valid JSON."""
+    text = context.get_variable(variable, "{}")
     if not isinstance(text, str) or not text.strip():
         return {}
     try:
         memory = json.loads(text)
     except ValueError:
-        logger.warning(f"{VARIABLE} is not valid JSON: no fiber's pose is remembered "
+        logger.warning(f"{variable} is not valid JSON: nothing is remembered from it "
                        f"(the next alignment replaces it).")
         return {}
     return memory if isinstance(memory, dict) else {}

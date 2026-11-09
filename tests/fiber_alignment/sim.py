@@ -551,6 +551,8 @@ class Scenario:
     noise: bool = True
     seed: int = 0
     params: Dict[str, Any] = field(default_factory=dict)
+    #: The walk a previous run left (µm/° by tilt axis: process.py passes memory.remembered_walk), or None.
+    walk: Optional[Dict[str, float]] = None
 
 
 @dataclass
@@ -602,7 +604,8 @@ def simulate(scenario: Scenario, align=None, phases=None, phase_views=None) -> R
         result = alignment.run_alignment(
             robot, meter, context, fiber=1, align=align or algorithm.align,
             phases=algorithm.PHASES if phases is None else phases,
-            phase_views=algorithm.PHASE_VIEWS if phase_views is None else phase_views)
+            phase_views=algorithm.PHASE_VIEWS if phase_views is None else phase_views,
+            walk=scenario.walk)
         error = None
     except Exception as e:  # the test decides whether it was expected
         result, error = None, e

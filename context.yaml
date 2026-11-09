@@ -340,6 +340,16 @@ variables:
   # Where each fiber aligned last (fiber_alignment/memory.py): its next
   # alignment starts there. Written after every alignment that ends in light.
   # Quoted: the value is a JSON string, not a YAML mapping.
+  tilt_walk:
+    type: str
+    # Written by every alignment (fiber_alignment/memory.py). On the cell,
+    # 2026-11-09: rx about -271, rz about +341 µm/°.
+    default: '{}'
+    editable_when_idle: true
+    reset_on: none
+    persist: true
+    description: 'How far the beam moves sideways per degree of tilt (JSON, µm/° for rx and rz), measured and corrected by every alignment. With it, the Angle phase reads each tilt at rest instead of re-centring it with a scan. Reset (or {}) after the gap between the fibers or TOOL_TRF changed: the next alignment measures it again.'
+
   fiber_poses:
     type: str
     default: '{}'

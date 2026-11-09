@@ -20,7 +20,10 @@ here:
   must stay within ``align_range_um`` / ``align_range_deg`` of the start pose,
   and be a finite number.
 * A pose remembered for the fiber (``seed``, where it aligned last) reaches
-  the algorithm as ``io.seed``, offsets from the start. The window stays
+  the algorithm as ``io.seed``, offsets from the start. The walk remembered
+  from the last run (``walk``: how far the beam moves sideways per degree of
+  tilt) reaches it as ``io.walk``, and what the run measured comes back in
+  ``AlignmentResult.walk``. The window stays
   centred on the start: a remembered pose never moves it.
 * ABORT, a device fault and ``align_timeout_s`` are checked before every
   command and every reading. A scan interrupted for any reason clears the
@@ -41,7 +44,7 @@ import logging
 import math
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional, Sequence
 
 import numpy as np
@@ -58,9 +61,10 @@ SAMPLE_FORMAT = 2
 RESULT_POINTS_MAX = 5000
 #: Most entries kept per io.publish() name in the align_result summary.
 RESULT_PUBLISHED_MAX = 500
-#: Pause between two readings during a scan (s). The meter reading and the
-#: pose query take a few ms more.
-SCAN_SAMPLE_PERIOD_S = 0.002
+#: Pause between two readings during a scan (s): none. The meter reading and
+#: the pose query block for ~10 ms on the cell; a 2 ms pause on top made
+#: every scan ~19 % slower for nothing.
+SCAN_SAMPLE_PERIOD_S = 0.0
 #: Meter reading plus pose query (s), until measured: about 3 ms per averaged
 #: sample on a PM100x, plus USB and the robot's reply.
 READ_S_GUESS = 0.008
@@ -225,6 +229,8 @@ class AlignmentResult:
     reads: int
     duration_s: float
     timed_out: bool
+    #: How far the beam walks sideways per degree of rx / rz (µm/°), as the run left it.
+    walk: Dict[str, float] = field(default_factory=dict)
 
 
 class AlignmentIO:
@@ -247,6 +253,9 @@ class AlignmentIO:
         #: Where this fiber aligned last, as :meth:`local` offsets from the
         #: start, or None. Set by run_alignment; never checked against the window.
         self.seed: Optional[Pose6] = None
+        #: The walk per tilt axis (µm/°: "rx", "rz"): remembered on the way in
+        #: (set by run_alignment), as the algorithm leaves it on the way out.
+        self.walk: Dict[str, float] = {}
         self._t0 = time.monotonic()
         self._deadline = self._t0 + settings.timeout_s
         #: Every reading so far.
@@ -669,7 +678,8 @@ def run_alignment(robot: Any, meter: Any, context: AppContext, fiber: int,
                   align: Algorithm, logger: Optional[logging.Logger] = None,
                   phases: Sequence[str] = (), phase_views: Optional[Dict[str, Any]] = None,
                   seed: Optional[Sequence[float]] = None,
-                  on_summary: Optional[Callable[[Dict[str, Any]], None]] = None) -> AlignmentResult:
+                  on_summary: Optional[Callable[[Dict[str, Any]], None]] = None,
+                  walk: Optional[Dict[str, float]] = None) -> AlignmentResult:
     """Run ``align`` from the robot's current pose, then judge the result.
 
     Brackets the run with ``align_start`` / ``align_end`` events and publishes
@@ -678,7 +688,9 @@ def run_alignment(robot: Any, meter: Any, context: AppContext, fiber: int,
     ``phases`` are the algorithm's phase names, in order (``algorithm.PHASES``),
     and ``phase_views`` how the custom view plots each (``algorithm.PHASE_VIEWS``).
     ``seed`` is a robot pose where this fiber aligned before: the algorithm
-    gets it as ``io.seed`` and may start there. ``on_summary`` is called with
+    gets it as ``io.seed`` and may start there. ``walk`` is the walk the last
+    run measured (µm/° per tilt axis): the algorithm gets it as ``io.walk``,
+    and the result's ``walk`` is what it leaves there. ``on_summary`` is called with
     the ``align_result`` summary as it is published, whether the run passed,
     failed, or raised (e.g. to log each run).
     """
@@ -688,9 +700,13 @@ def run_alignment(robot: Any, meter: Any, context: AppContext, fiber: int,
     io = AlignmentIO(robot, meter, context, settings, logger=log, phases=phases)
     if seed is not None:
         io.seed = io.local(seed)
+    if walk:
+        io.walk = {axis: float(v) for axis, v in walk.items()}
     remembered = "" if io.seed is None else (
         f", remembered pose at x {io.seed[0]:.1f} µm, z {io.seed[2]:.1f} µm, "
         f"rx {io.seed[3]:.3f}°, rz {io.seed[5]:.3f}° from it")
+    if io.walk:
+        remembered += ", remembered walk " + ", ".join(f"{a} {v:.0f} µm/°" for a, v in sorted(io.walk.items()))
     log.info(f"Alignment of fiber {fiber}: start {_fmt_pose(io.start)}{remembered}, window ±{settings.range_mm:g} mm "
              f"/ ±{settings.range_deg:g}°, threshold {settings.threshold_db:.2f} dB ({settings.threshold_w:.4g} W), "
              f"timeout {settings.timeout_s:g} s. "
@@ -750,6 +766,7 @@ def run_alignment(robot: Any, meter: Any, context: AppContext, fiber: int,
         reads=len(io.samples),
         duration_s=io.elapsed_s(),
         timed_out=timed_out,
+        walk=dict(io.walk),
     )
     context.mark("align_end", fiber=fiber, passed=result.passed, power_w=final.power_w)
     summary = _summary(io, settings, fiber, phase_views, passed=result.passed, power_w=final.power_w,
@@ -798,6 +815,7 @@ def _summary(io: AlignmentIO, settings: AlignmentSettings, fiber: int, phase_vie
         "phase_views": phase_views,
         "reads": len(io.samples),
         "duration_s": round(io.elapsed_s(), 2),
+        "walk": {axis: round(v, 1) for axis, v in io.walk.items()},
         **outcome,
         "best_still": io.row(io.best_still) if io.best_still else None,
         "phases": phases,

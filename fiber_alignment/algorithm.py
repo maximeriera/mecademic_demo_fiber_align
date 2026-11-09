@@ -33,14 +33,18 @@ the custom view as PHASE_VIEWS declares:
    (``acquire_capture_um``, ``acquire_capture_deg``), not from the beam's
    core. With ``acquire_full_search`` (for demos), a translation then a
    rotation scan over the full radius run to their end first.
-2. Center: two-way scans across the light along x then z, each fitted with a
-   Gaussian over the noise floor; the fiber moves to the fitted centre until
-   it no longer shifts. The two directions also measure what is left of the
+2. Center: a two-way scan across the light along x, then z, each fitted
+   with a Gaussian over the noise floor; the fiber moves to the fitted
+   centre. The two directions also measure what is left of the
    reading/pose lag.
 3. Angle: for rx then rz, tilts stepping away from the current one while the
-   power rises, each re-centred along the lateral axis the tilt walks the
-   beam on. A parabola through the log of the power at the best tilt and its
-   two neighbours gives the tilt to keep.
+   power rises. With the walk known (how far the beam moves sideways per
+   degree of tilt: remembered from the last run, ``io.walk``), each tilt is
+   read at rest where the walk puts the beam; else each is re-centred with a
+   cross scan along the lateral axis the tilt walks the beam on. A parabola
+   through the log of the power at the best tilt and its two neighbours
+   gives the tilt to keep, re-centred there along both lateral axes. A second,
+   finer round only when the first was not clean.
 4. Peak: first the gradient circles of the cell's first script, in rounds: a
    circle in x/z, then one in Rx/Rz (carrying x/z along by the walk the
    Angle phase measured), each read on the move, a plane fitted to the log
@@ -110,7 +114,8 @@ MAX_RANGE_W = 1.0
 
 # --- Motion ----------------------------------------------------------------------------
 #: Point-to-point moves: to a scan's start, to a pattern point, to a tilt.
-MOVE_MOTION = {"acc": 50, "lin_vel": 2.0, "ang_vel": 5.0, "blending": 0}
+#: Under a mm inside the window: at 2 mm/s they took ~0.2 s of each cross scan.
+MOVE_MOTION = {"acc": 50, "lin_vel": 10.0, "ang_vel": 5.0, "blending": 0}
 #: Slowest scan speeds (mm/s, °/s).
 MIN_SCAN_SPEED = 0.01
 MIN_SCAN_ANG_SPEED = 0.01
@@ -215,10 +220,13 @@ EDGE_FRACTION = 0.15
 EDGE_RESCANS = 3
 DARK_WIDENINGS = 3
 TILT_DARK_WIDENINGS = 2
-#: Centring stops once the centre moves less than max(CENTER_TOL_WIDTHS widths, CENTER_TOL_MIN_UM).
+#: Centring stops once the centre moves less than max(CENTER_TOL_WIDTHS widths,
+#: CENTER_TOL_MIN_UM), after CENTER_ITERATIONS at most. One: a second only
+#: confirmed the first (2-4 µm on the cell, 71 runs), and Angle re-centres
+#: both axes at the tilts it keeps.
 CENTER_TOL_WIDTHS = 0.05
 CENTER_TOL_MIN_UM = 0.5
-CENTER_ITERATIONS = 3
+CENTER_ITERATIONS = 1
 
 # --- Angle -----------------------------------------------------------------------------------
 #: The lateral axis a tilt walks the beam along.
@@ -228,9 +236,18 @@ TILT_STEP_WIDTHS = 0.5
 TILT_GROWTH = 1.5
 #: Most tilts tried per line search.
 TILT_MAX = 10
-#: Rounds of rx then rz, while a round gains at least ANGLE_MIN_GAIN_DB.
+#: Rounds of rx then rz. A second round only if a search of the first was not
+#: clean (no bracketed parabola, or the beam re-centred off the walk's
+#: prediction): on the cell it gained 0.18 dB in 16 s, which Peak's circles
+#: polish. Then rounds while one gains at least ANGLE_MIN_GAIN_DB.
 ANGLE_ROUNDS = 3
 ANGLE_MIN_GAIN_DB = 0.1
+#: A tilt search is clean if the beam, re-centred at the tilt kept, is within
+#: TILT_WALK_TOL_WIDTHS lateral widths of where the walk put it. The walk is
+#: updated from that re-centring when the tilt moved at least
+#: TILT_WALK_UPDATE_WIDTHS angle widths.
+TILT_WALK_TOL_WIDTHS = 0.25
+TILT_WALK_UPDATE_WIDTHS = 0.5
 
 # --- Peak --------------------------------------------------------------------------------------
 #: Gradient circles: radius in widths (lateral, or tilt): 36 µm and 0.03° on
@@ -287,8 +304,11 @@ class _State:
     width: Dict[str, float] = field(default_factory=dict)
     #: 1/e half-width (°) of the power against a tilt.
     angle_width: float = 0.0
-    #: How far the beam walks along the lateral axis per degree of rx / rz (µm/°), once measured.
+    #: How far the beam walks along the lateral axis per degree of rx / rz
+    #: (µm/°): remembered from the last run (io.walk), or once measured.
     walk: Dict[str, float] = field(default_factory=dict)
+    #: The latest cross scan that found light: (axis, rx, rz it ran at, power, centre).
+    last_cross: Optional[Tuple[str, float, float, float, float]] = None
     #: The power expected at pos (W).
     peak_w: float = 0.0
     #: The meter's reading without light (W), and the lowest reading counted as light.
@@ -326,12 +346,15 @@ def align(io: AlignmentIO, settings: AlignmentSettings) -> None:
     lateral = settings.lateral_width_mm * 1e3
     state = _State(settings, width={"x": lateral, "z": lateral}, angle_width=settings.angle_width_deg,
                    scan_range_w=SCAN_RANGE * settings.source_power_w)
+    state.walk.update({axis: float(v) for axis, v in (io.walk or {}).items()
+                       if axis in TILT_WALK and isinstance(v, (int, float)) and math.isfinite(v)})
     with io.phase("Acquire"):
         acquire(io, state)
     with io.phase("Center"):
         center(io, state)
     with io.phase("Angle"):
         angle(io, state)
+    io.walk = dict(state.walk)
     with io.phase("Peak"):
         peak(io, state)
 
@@ -856,22 +879,28 @@ def cross_scan(io: AlignmentIO, state: _State, axis: str, iteration: int,
         # Towards the fitted centre (else the best reading), by at most a half-span.
         target = found.center if found is not None else top[0]
         middle += max(-half, min(half, target - middle))
+    state.last_cross = None
     if caught is not None:
         state.pos[axis] = caught.center
         state.width[axis] = _new_width(state.width[axis], caught.width, LATERAL_WIDTH_BOUNDS_UM)
         state.peak_w = caught.top
-        return True
-    if best is not None and best[1] >= state.detect_w:
+    elif best is not None and best[1] >= state.detect_w:
         state.pos[axis] = best[0]
         state.peak_w = best[1]
-        return True
-    state.peak_w = best[1] if best is not None else 0.0
-    return False
+    else:
+        state.peak_w = best[1] if best is not None else 0.0
+        return False
+    state.last_cross = (axis, state.pos["rx"], state.pos["rz"], state.peak_w, state.pos[axis])
+    return True
 
 
 def _scan_both_ways(io: AlignmentIO, state: _State, axis: str, lo: float, hi: float,
                     spacing: float) -> List[Tuple[int, List[Tuple[float, float]]]]:
-    """Readings (coordinate, power) from lo to hi, then back, at a fixed meter range (_scan_range); raised on an overrange."""
+    """Readings (coordinate, power) from lo to hi, then back, at a fixed meter range (_scan_range); raised on an overrange.
+
+    One motion, lo → hi → lo (it stops at hi: no blending), split where the
+    coordinate turns: one scan to queue instead of two.
+    """
     index = LOCAL_INDEX[axis]
     range_w = _scan_range(state)
     while True:
@@ -879,10 +908,10 @@ def _scan_both_ways(io: AlignmentIO, state: _State, axis: str, lo: float, hi: fl
         _range(io, state, range_w)
         _goto(io, state, **{axis: lo})
         _motion(io, state, lin_vel=_scan_speed(io, spacing), blending=0)
-        passes = []
-        for direction, end in ((1, hi), (-1, lo)):
-            samples = io.scan([state.pose(io, **{axis: end})], kind="cart")
-            passes.append((direction, [(io.local(s.pose)[index], s.power_w) for s in samples]))
+        samples = io.scan([state.pose(io, **{axis: hi}), state.pose(io, **{axis: lo})], kind="cart")
+        points = [(io.local(s.pose)[index], s.power_w) for s in samples]
+        turn = int(np.argmax([c for c, _ in points])) + 1 if points else 0
+        passes = [(1, points[:turn]), (-1, points[turn:])]
         if not any(math.isinf(p) for _, pts in passes for _, p in pts):
             return passes
         range_w = _raise_range(state, range_w)
@@ -904,29 +933,44 @@ def _fit_passes(passes, baseline: float) -> Tuple[Optional[fit.Gauss], Optional[
 # --- Angle ----------------------------------------------------------------------------------
 
 def angle(io: AlignmentIO, state: _State) -> None:
-    """Tilt line searches in rx then rz, re-centred as the tilt walks the beam; again, finer, while it gains."""
+    """Tilt line searches in rx then rz, re-centred as the tilt walks the beam; again, finer, if the first round was not clean, and while it gains."""
     for round_ in range(ANGLE_ROUNDS):
         before = state.peak_w
-        for axis in ("rx", "rz"):
-            tilt_search(io, state, axis, round_)
+        clean = [tilt_search(io, state, axis, round_) for axis in ("rx", "rz")]
+        if round_ == 0 and all(clean):
+            break  # Peak's gradient circles polish what is left
         if _db(state.peak_w, before) < ANGLE_MIN_GAIN_DB:
             break
     _goto(io, state)
     state.peak_w = _still(io, state, "cart")
 
 
-def tilt_search(io: AlignmentIO, state: _State, axis: str, round_: int) -> None:
+def tilt_search(io: AlignmentIO, state: _State, axis: str, round_: int) -> bool:
     """Step the tilt away from pos[axis] while the power rises; keep the tilt a parabola through the best picks.
 
-    At each tilt, the fiber is re-centred along the lateral axis the tilt
-    walks the beam on, and the power there counts. A tilt where no light
-    shows counts as no power: it ends that direction.
+    With the walk known (state.walk: remembered, or measured earlier in the
+    run), each tilt is read at rest where the walk puts the beam, the
+    lateral position carried from where the search starts. Else, at each
+    tilt, the fiber is re-centred along the lateral axis the tilt walks the
+    beam on (the latest cross scan stands for the starting tilt if it was
+    along that axis, there), and the power there counts; the walk is
+    measured from those centres. A tilt where no light shows counts as no
+    power: it ends that direction. At the tilt kept, the fiber is re-centred
+    along both lateral axes, and a known walk is corrected from where the
+    beam really was.
+
+    Returns whether the search was clean: the tilt kept from a parabola with
+    a top between its points, and the beam re-centred within
+    TILT_WALK_TOL_WIDTHS widths of where the walk put it.
     """
     walk = TILT_WALK[axis]
     other = "x" if walk == "z" else "z"
     step = TILT_STEP_WIDTHS * state.angle_width * 0.5 ** round_
     limit = _tilt_limit(state, axis)
-    tried: Dict[float, Tuple[float, float]] = {}  # tilt -> (power re-centred, centre along `walk`)
+    tried: Dict[float, Tuple[float, float]] = {}  # tilt -> (power, centre along `walk`)
+    known = axis in state.walk
+    start = round(state.pos[axis], 6)
+    centre0 = state.pos[walk]
 
     def lit() -> List[float]:
         return sorted(t for t, (p, _) in tried.items() if p >= state.detect_w)
@@ -940,18 +984,30 @@ def tilt_search(io: AlignmentIO, state: _State, axis: str, round_: int) -> None:
 
     def measure(tilt: float) -> float:
         tilt = round(min(max(tilt, -limit), limit), 6)
-        if tilt not in tried:
-            # Where the beam should land at this tilt: from the nearest lit tilt, along the walk.
-            tilts = lit()
-            if tilts:
-                near = min(tilts, key=lambda t: abs(t - tilt))
-                state.pos[walk] = tried[near][1] + walk_slope() * (tilt - near)
+        if tilt in tried:
+            return tried[tilt][0]
+        if known:
+            # At rest, where the walk puts the beam at this tilt.
             state.pos[axis] = tilt
-            cross_scan(io, state, walk, round_, widenings=TILT_DARK_WIDENINGS)
-            tried[tilt] = (state.peak_w, state.pos[walk])
+            state.pos[walk] = centre0 + state.walk[axis] * (tilt - start)
+            _goto(io, state)
+            tried[tilt] = (_still(io, state, "ang"), state.pos[walk])
+            return tried[tilt][0]
+        last = state.last_cross
+        if (tilt == start and last is not None and last[0] == walk
+                and abs(last[1] - state.pos["rx"]) < 1e-9 and abs(last[2] - state.pos["rz"]) < 1e-9):
+            tried[tilt] = (last[3], last[4])  # just scanned there: no need to again
+            return tried[tilt][0]
+        # Where the beam should land at this tilt: from the nearest lit tilt, along the walk.
+        tilts = lit()
+        if tilts:
+            near = min(tilts, key=lambda t: abs(t - tilt))
+            state.pos[walk] = tried[near][1] + walk_slope() * (tilt - near)
+        state.pos[axis] = tilt
+        cross_scan(io, state, walk, round_, widenings=TILT_DARK_WIDENINGS)
+        tried[tilt] = (state.peak_w, state.pos[walk])
         return tried[tilt][0]
 
-    start = round(state.pos[axis], 6)
     current = measure(start)
     for direction in (1, -1):
         tilt, power, size = start, current, step
@@ -971,20 +1027,29 @@ def tilt_search(io: AlignmentIO, state: _State, axis: str, round_: int) -> None:
     parabola = None
     if 0 < i < len(tilts) - 1 and all(p >= state.detect_w for p in powers[i - 1:i + 2]):
         parabola = fit.parabola1d(tilts[i - 1:i + 2], powers[i - 1:i + 2])
-    if parabola is not None and parabola.curvature < 0 and math.isfinite(parabola.vertex):
+    bracketed = parabola is not None and parabola.curvature < 0 and math.isfinite(parabola.vertex)
+    if bracketed:
         chosen = min(max(parabola.vertex, tilts[i - 1]), tilts[i + 1])
         state.angle_width = _new_width(state.angle_width, parabola.width, ANGLE_WIDTH_BOUNDS_DEG)
     else:
         chosen = tilts[i]
-    # Start the re-centring where the tilts put the centre, then scan both lateral axes.
-    lit_tilts = lit() or tilts
-    slope = walk_slope() if len(lit()) >= 2 else None
-    if slope is not None:
-        state.walk[axis] = slope
+    # Start the re-centring where the walk puts the centre at the tilt kept, then scan both lateral axes.
+    if known:
+        predicted = centre0 + state.walk[axis] * (chosen - start)
+    else:
+        lit_tilts = lit() or tilts
+        slope = walk_slope() if len(lit()) >= 2 else None
+        if slope is not None:
+            state.walk[axis] = slope
+        predicted = float(np.interp(chosen, lit_tilts, [tried[t][1] for t in lit_tilts]))
     state.pos[axis] = chosen
-    state.pos[walk] = float(np.interp(chosen, lit_tilts, [tried[t][1] for t in lit_tilts]))
-    for lateral in (walk, other):
-        cross_scan(io, state, lateral, round_)
+    state.pos[walk] = predicted
+    centred = all([cross_scan(io, state, lateral, round_) for lateral in (walk, other)])
+    off = abs(state.pos[walk] - predicted)
+    if known and centred and abs(chosen - start) >= TILT_WALK_UPDATE_WIDTHS * state.angle_width:
+        # Where the beam really was at the tilt kept: the walk, corrected.
+        state.walk[axis] = (state.pos[walk] - centre0) / (chosen - start)
+    clean = bracketed and centred and off <= TILT_WALK_TOL_WIDTHS * state.width[walk]
     # The walk (µm/°) is in effect the distance between the fiber ends (or from the TCP to the tip).
     io.publish("profile", {
         "axis": axis,
@@ -993,13 +1058,16 @@ def tilt_search(io: AlignmentIO, state: _State, axis: str, round_: int) -> None:
         "unit": "°",
         "span": [tilts[0], tilts[-1]] if len(tilts) > 1 else [tilts[0] - step, tilts[0] + step],
         "passes": [{"dir": 1, "points": [[t, p] for t, p in zip(tilts, powers)]}],
-        "fit": None if parabola is None or not parabola.curvature < 0 else {
+        "fit": None if not bracketed else {
             "model": "parabola", "center": round(parabola.vertex, 5), "width": round(parabola.width, 5),
             "peak": parabola.peak,
         },
         "chosen": round(chosen, 5),
-        "walk_um_per_deg": None if slope is None else round(slope, 1),
+        "walk_um_per_deg": round(state.walk[axis], 1) if axis in state.walk else None,
+        "at_rest": known,
+        "clean": clean,
     })
+    return clean
 
 
 # --- Peak -----------------------------------------------------------------------------------
