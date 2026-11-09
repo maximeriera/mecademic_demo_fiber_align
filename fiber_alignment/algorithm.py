@@ -245,7 +245,9 @@ ANGLE_MIN_GAIN_DB = 0.1
 #: A tilt search is clean if the beam, re-centred at the tilt kept, is within
 #: TILT_WALK_TOL_WIDTHS lateral widths of where the walk put it. The walk is
 #: updated from that re-centring when the tilt moved at least
-#: TILT_WALK_UPDATE_WIDTHS angle widths.
+#: TILT_WALK_UPDATE_WIDTHS angle widths: a few µm of centring error over a
+#: smaller tilt would make it noisy (over a full width, a wrong walk would
+#: hardly ever be corrected: Rz often moves less).
 TILT_WALK_TOL_WIDTHS = 0.25
 TILT_WALK_UPDATE_WIDTHS = 0.5
 

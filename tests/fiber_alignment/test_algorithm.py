@@ -6,6 +6,7 @@ fibers, to keep the algorithm free of any one scale.
 """
 
 import math
+from dataclasses import replace
 
 import pytest
 
@@ -265,6 +266,79 @@ def test_a_hint_is_a_loss_hint_gain_db_better_than_the_centre():
     # The payloads carry it.
     run, _ = acquire_only(slow_meter((-131.29, -42.02, -2.0401, 0.3002), 0.2, hint_gain_db=4.0))
     assert all(a["hint_gain_db"] == 4.0 for a in run.context.published("align_acquire"))
+
+
+def watch_cross_scans(monkeypatch):
+    """Each cross scan the run makes: (phase index, axis, rx, rz) at its start."""
+    calls = []
+    original = algorithm.cross_scan
+
+    def watched(io, state, axis, *args, **kwargs):
+        calls.append((io._phase, axis, round(state.pos["rx"], 6), round(state.pos["rz"], 6)))
+        return original(io, state, axis, *args, **kwargs)
+
+    monkeypatch.setattr(algorithm, "cross_scan", watched)
+    return calls
+
+
+def test_angle_never_scans_again_where_it_just_did(monkeypatch):
+    # A tilt search's first tilt is the one the fiber is at: the cross scan
+    # just made there (Center's, or the previous search's re-centring) counts.
+    calls = watch_cross_scans(monkeypatch)
+    run = simulate(CASES["cell-run"])
+    assert run.error is None, run.error
+    repeats = [a for a, b in zip(calls, calls[1:]) if a == b]
+    assert not repeats, repeats
+
+
+def test_with_the_walk_known_each_tilt_is_read_at_rest(monkeypatch):
+    # The first run measures the walk; the next starts with it (as process.py
+    # passes it from tilt_walk): its tilts are read at rest, where the walk
+    # puts the beam, and only the tilt kept is re-centred (both axes).
+    first = simulate(CASES["angle-off"])
+    walk = first.summary["walk"]
+    assert set(walk) == {"rx", "rz"}
+    calls = watch_cross_scans(monkeypatch)
+    run = simulate(replace(CASES["angle-off"], walk=walk))
+    assert run.error is None, run.error
+    tilts = [p for p in run.context.published("align_profile") if p["unit"] == "°"]
+    assert tilts and all(p["at_rest"] for p in tilts)
+    angle = algorithm.PHASES.index("Angle")
+    assert sum(1 for c in calls if c[0] == angle) == 2 * len(tilts)
+    assert {p["iteration"] for p in tilts} == {0}, "a clean first round is enough"
+    assert run.result.power_w >= 0.97 * run.optics.best_power_w()
+    # The walk it leaves agrees with the one it was given.
+    for axis in ("rx", "rz"):
+        assert run.summary["walk"][axis] == pytest.approx(walk[axis], rel=0.15)
+
+
+def test_a_wrong_remembered_walk_is_corrected_and_the_tilts_searched_again():
+    first = simulate(CASES["angle-off"])
+    # Reversed (e.g. remembered before TOOL_TRF was taught again): the beam is
+    # not where the walk says at the tilt kept, so the first round is not clean.
+    wrong = {axis: -v for axis, v in first.summary["walk"].items()}
+    run = simulate(replace(CASES["angle-off"], walk=wrong))
+    assert run.error is None, run.error
+    tilts = [p for p in run.context.published("align_profile") if p["unit"] == "°"]
+    assert not all(p["clean"] for p in tilts if p["iteration"] == 0)
+    assert max(p["iteration"] for p in tilts) >= 1, "a second round"
+    assert run.result.power_w >= 0.97 * run.optics.best_power_w()
+    for axis in ("rx", "rz"):
+        assert run.summary["walk"][axis] == pytest.approx(first.summary["walk"][axis], rel=0.15)
+
+
+def test_a_cross_scan_runs_both_ways_in_one_motion():
+    run = simulate(CASES["cell-run"])
+    for p in run.context.published("align_profile"):
+        if p["unit"] != "µm":
+            continue
+        (d0, forward), (d1, backward) = [(q["dir"], [c for c, _ in q["points"]]) for q in p["passes"]]
+        lo, hi = p["span"]
+        assert (d0, d1) == (1, -1)
+        # Each way covers the window, the one rising, the other falling.
+        for coords in (forward, backward):
+            assert max(coords) - min(coords) >= 0.9 * (hi - lo)
+        assert forward[-1] > forward[0] and backward[-1] < backward[0]
 
 
 def test_the_peak_pattern_spans_a_fifth_of_the_width():

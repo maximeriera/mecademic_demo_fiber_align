@@ -206,11 +206,13 @@ offsets. The rows published on `align_sample` use them too.
 
 **Center** (`center`, `cross_scan`)
 
-- **Iterations.** Up to 3, each an X scan then a Z scan. It stops when the
-  centre moves less than max(0.5 µm, 0.05 width).
+- **One pass.** An X scan, then a Z scan. A second pass only confirmed the
+  first on the cell (2–4 µm, against a tolerance of 0.05 width), and Angle
+  re-centres both axes at the tilts it keeps (`CENTER_ITERATIONS`).
 - **A scan.** It spans ±1.5 widths around the current estimate, with a
-  reading every width/10 (at least 0.25 µm). Each scan runs both ways, with
-  1 sample per reading and the meter at a fixed range: 10 × the power
+  reading every width/10 (at least 0.25 µm). Each scan runs both ways in one
+  motion (to the far end, stop, back), split where it turns, with 1 sample
+  per reading and the meter at a fixed range: 10 × the power
   expected (at least 10 × the light level), at most 1.2 × source, ×10 on an
   overrange. At 1.2 × source, faint first light (tens of nW) would read 0.
 - **The fit.** Each direction is fitted with a Gaussian over the noise floor:
@@ -231,16 +233,24 @@ offsets. The rows published on `align_sample` use them too.
 
 **Angle** (`angle`, `tilt_search`)
 
-- **Rounds.** Rx then Rz, repeated while a round gains at least 0.1 dB, 3
-  rounds at most.
+- **Rounds.** Rx then Rz. A second round only if a search of the first was
+  not *clean* (below); then again while a round gains at least 0.1 dB, 3
+  rounds at most. On the cell, the second round gained 0.18 dB in 16 s:
+  Peak's gradient circles polish that.
 - **Tilt steps.** From the current tilt, steps of 0.5 angle width (halved
   each round), growing ×1.5 while the power rises. It tries one direction,
   then the other if the first did not help. At most 10 tilts per search.
-- **At each tilt.** The fiber is re-centred along the lateral axis that tilt
-  walks the beam on: Rx walks it along Z, Rz along X. The re-centring starts
-  where the walk measured so far predicts the beam. The power after
-  re-centring is the tilt's power. A tilt with no light counts as no power,
-  and ends that direction.
+- **At each tilt, with the walk known** (remembered from the last run, or
+  measured earlier in this one): the fiber goes to the tilt with the lateral
+  position the walk predicts (carried from where the search started), and
+  reads the power at rest. About 0.3 s, instead of ~1.6 s for a cross scan:
+  the walk is stable to ±7 % on the cell, a few µm against a 222 µm width.
+- **At each tilt, without it** (the first run, or `tilt_walk` reset): the
+  fiber is re-centred along the lateral axis that tilt walks the beam on (Rx
+  walks it along Z, Rz along X), starting where the walk measured so far
+  predicts the beam; the power after re-centring is the tilt's power. The
+  first tilt is the current one: the cross scan just made there counts.
+- A tilt with no light counts as no power, and ends that direction.
 - **The tilt kept.** A parabola in log power through the best tilt and its
   two neighbours gives the tilt, kept between those two neighbours. It also
   gives a new angle width.
@@ -248,7 +258,13 @@ offsets. The rows published on `align_sample` use them too.
   (µm/°) is published as "walk". It is in effect the distance from the
   rotation centre (the TCP, at the receiver's tip) to the emitter's end, per
   radian: ~175 µm/° for ends 10 mm apart.
-- **Then.** Both lateral axes are re-centred.
+- **Then.** Both lateral axes are re-centred at the tilt kept. With the walk
+  known, where the beam really was corrects it (if the tilt moved at least
+  half an angle width: over a smaller tilt, a few µm of centring error would
+  make it noisy).
+- **Clean.** A search is clean when the tilt kept came from a parabola with
+  its top between its points, and the beam re-centred within 0.25 lateral
+  width of where the walk put it.
 
 **Peak** (`peak`): the gradient circles (`gradient`, `circle`), then the pattern
 
@@ -338,6 +354,11 @@ offsets. The rows published on `align_sample` use them too.
   taught again. One kept with another `TOOL_TRF` is not used.
 - To forget them (a fiber moved in its slot, a new rack), press Reset on
   `fiber_poses` in the Variables tab, or set it to `{}`.
+- **The walk** (`tilt_walk`, JSON, persisted): every alignment leaves the
+  walk it measured or corrected, in µm/° for Rx and Rz, and the next one
+  starts with it (the Angle phase then reads its tilts at rest). Kept with
+  the `TOOL_TRF`, and ignored with another. Reset it after the gap between
+  the fibers changed: the next alignment measures it again.
 - To ignore them without forgetting them, turn `use_remembered_pose` off:
   every alignment then searches from where it starts, and the poses are
   still kept up to date.

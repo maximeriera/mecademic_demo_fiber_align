@@ -2,7 +2,6 @@
 __pycache__/
 *.py[codz]
 *$py.class
-*.pyc
 
 # C extensions
 *.so
@@ -236,3 +235,6 @@ logs/app/app.log
 logs/app/ApplicationController.log
 logs/app/combined.log
 logs/devices/meca_robot.log
+fiber_alignment/__pycache__/
+logs/alignment/*
+logs/devices/*

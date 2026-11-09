@@ -28263,3 +28263,34 @@ Exception: Initialization failed for device meca_robot: Activation error
 2026-11-09 19:14:55 | INFO    | http-17970       | app                    | app:404  | [req=75bb7b77] Task started: PROD
 2026-11-09 19:14:55 | INFO    | http-17970       | app                    | app:316  | [req=75bb7b77] POST /api/task/prod -> 200 in 5.0 ms
 2026-11-09 19:14:55 | INFO    | LivePublisher    | app                    | app:257  | Controller state observed: Ready -> Busy
+2026-11-09 20:46:58 | INFO    | http-146633      | app                    | app:316  | [req=98b161eb] GET / -> 200 in 0.9 ms
+2026-11-09 20:46:59 | INFO    | http-146648      | app                    | app:316  | [req=533b13fa] GET /api/backup_restore/robots -> 200 in 0.3 ms
+2026-11-09 20:46:59 | INFO    | http-146649      | app                    | app:316  | [req=c0389c78] GET /api/manual/actions -> 200 in 0.2 ms
+2026-11-09 20:46:59 | INFO    | http-146657      | app                    | app:316  | [req=cc1db4ef] GET /api/workspaces -> 200 in 37.1 ms
+2026-11-09 20:46:59 | INFO    | http-146659      | app                    | app:316  | [req=1d814bba] GET /api/history/days -> 200 in 7.7 ms
+2026-11-09 20:46:59 | INFO    | http-146661      | app                    | app:316  | [req=78824b5e] GET /api/history/runs -> 200 in 5.1 ms
+2026-11-09 20:47:00 | INFO    | http-146696      | app                    | app:437  | [req=07749237] POST /api/stop - Stop signal sent.
+2026-11-09 20:47:00 | INFO    | http-146696      | app                    | app:316  | [req=07749237] POST /api/stop -> 200 in 18.2 ms
+2026-11-09 20:48:23 | INFO    | LivePublisher    | app                    | app:257  | Controller state observed: Busy -> Ready
+2026-11-09 21:07:01 | INFO    | MainThread       | app                    | app:1280 | Received SIGTERM - shutting down APPLICATION controller.
+2026-11-09 21:07:01 | INFO    | MainThread       | app                    | app:1244 | Process exit: Shutting down APPLICATION controller.
+2026-11-09 21:07:04 | INFO    | MainThread       | app                    | app:123  | ApplicationController initialized successfully.
+2026-11-09 21:07:04 | INFO    | MainThread       | app                    | app:1291 | Starting Flask server on 0.0.0.0:5000
+2026-11-09 21:07:04 | INFO    | http-6           | app                    | app:257  | [req=30f3061f] Controller state observed: (initial) -> Off
+2026-11-09 21:07:05 | INFO    | http-22          | app                    | app:274  | [req=857c55c9] Device health changed: meca_robot(conn=N,ready=N,fault=Y) | fiber_gripper(conn=N,ready=N,fault=N) | power_meter(conn=N,ready=N,fault=N)
+2026-11-09 21:07:06 | INFO    | http-52          | app                    | app:316  | [req=7cc72d94] GET / -> 200 in 10.7 ms
+2026-11-09 21:07:06 | INFO    | http-68          | app                    | app:316  | [req=055bc6fd] GET /api/manual/actions -> 200 in 0.1 ms
+2026-11-09 21:07:06 | INFO    | http-69          | app                    | app:316  | [req=f6c24f11] GET /api/backup_restore/robots -> 200 in 0.2 ms
+2026-11-09 21:07:06 | INFO    | http-72          | app                    | app:316  | [req=b0c062a1] GET /api/workspaces -> 200 in 24.7 ms
+2026-11-09 21:07:06 | INFO    | http-78          | app                    | app:316  | [req=a96aec45] GET /api/history/runs -> 200 in 0.2 ms
+2026-11-09 21:07:06 | INFO    | http-79          | app                    | app:316  | [req=a98e4a00] GET /api/history/days -> 200 in 0.2 ms
+2026-11-09 21:07:08 | INFO    | http-117         | app                    | app:417  | [req=96828bc2] POST /api/initialize - Initialization requested.
+2026-11-09 21:07:08 | INFO    | LivePublisher    | app                    | app:257  | Controller state observed: Off -> Initializing
+2026-11-09 21:07:08 | INFO    | LivePublisher    | app                    | app:274  | Device health changed: meca_robot(conn=Y,ready=Y,fault=N) | fiber_gripper(conn=Y,ready=Y,fault=N) | power_meter(conn=N,ready=N,fault=N)
+2026-11-09 21:07:09 | INFO    | http-117         | app                    | app:420  | [req=96828bc2] Initialization successful.
+2026-11-09 21:07:09 | INFO    | http-117         | app                    | app:316  | [req=96828bc2] POST /api/initialize -> 200 in 1355.5 ms
+2026-11-09 21:07:09 | INFO    | http-154         | app                    | app:257  | [req=ebf31320] Controller state observed: Initializing -> Ready
+2026-11-09 21:07:10 | INFO    | LivePublisher    | app                    | app:274  | Device health changed: meca_robot(conn=Y,ready=Y,fault=N) | fiber_gripper(conn=Y,ready=Y,fault=N) | power_meter(conn=Y,ready=Y,fault=N)
+2026-11-09 21:07:15 | INFO    | http-270         | app                    | app:404  | [req=fdf2bb89] Task started: PROD
+2026-11-09 21:07:15 | INFO    | http-270         | app                    | app:316  | [req=fdf2bb89] POST /api/task/prod -> 200 in 5.6 ms
+2026-11-09 21:07:15 | INFO    | LivePublisher    | app                    | app:257  | Controller state observed: Ready -> Busy

@@ -118,3 +118,6 @@
 2026-11-09 19:08:27 | INFO    | http-4590        | device.power_meter     | ThorlabsPowerMeter:222  | [req=b8bf5e8e] [power_meter] Connected: Thorlabs,PM100USB,M01314850,1.7.0 | sensor S154C S/N 260618229
 2026-11-09 19:10:17 | INFO    | http-7046        | device.power_meter     | ThorlabsPowerMeter:222  | [req=6cf7f864] [power_meter] Connected: Thorlabs,PM100USB,M01314850,1.7.0 | sensor S154C S/N 260618229
 2026-11-09 19:13:57 | WARNING | http-15581       | device.power_meter     | ThorlabsPowerMeter:184  | [req=e1adae8a] [power_meter] Abort requested (no operation to stop on a power meter).
+2026-11-09 21:07:02 | INFO    | MainThread       | device.power_meter     | Device:122  | [power_meter] device is being deleted.
+2026-11-09 21:07:04 | INFO    | MainThread       | device.power_meter     | Device:104  | [power_meter] device created.
+2026-11-09 21:07:09 | INFO    | http-117         | device.power_meter     | ThorlabsPowerMeter:222  | [req=96828bc2] [power_meter] Connected: Thorlabs,PM100USB,M01314850,1.7.0 | sensor S154C S/N 260618229

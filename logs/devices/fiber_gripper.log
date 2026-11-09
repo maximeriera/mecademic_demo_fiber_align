@@ -207,3 +207,6 @@
 2026-11-09 19:14:40 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:62   | [fiber_gripper] Close (channel 0): done in 5.02 s, at -0.000005 mm
 2026-11-09 19:14:41 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:49   | [fiber_gripper] Open (channel 0): from -0.000010 mm to 5.000000 mm
 2026-11-09 19:14:46 | ERROR   | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:59   | [fiber_gripper] Open (channel 0): failed after 5.34 s: MCS2MotionError: Channel 0: movement failed (SENSOR_PRESENT, IS_REFERENCED, END_STOP_REACHED, MOVEMENT_FAILED) | at 4.846569 mm, state: SENSOR_PRESENT, IS_REFERENCED, END_STOP_REACHED, MOVEMENT_FAILED
+2026-11-09 21:07:02 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 21:07:04 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 21:07:08 | INFO    | http-117         | device.fiber_gripper   | SmarActMCS2:271  | [req=96828bc2] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"

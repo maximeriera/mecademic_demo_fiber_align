@@ -77,3 +77,34 @@ def test_no_hold_at_zero_and_none_away_from_the_station(monkeypatch):
     context, clock, run = hold(monkeypatch, 5.0, Meter(), at_alignment=False)
     with pytest.raises(ProcessError, match="alignment station"):
         run()
+
+
+class Variables:
+    """The variables the memory reads and writes."""
+
+    def __init__(self, **values):
+        self.values = dict(values)
+
+    def get_variable(self, name, default=None):
+        return self.values.get(name, default)
+
+    def set_variable(self, name, value):
+        self.values[name] = value
+
+
+def test_the_walk_is_remembered_for_the_next_run(monkeypatch):
+    from app_logic.fiber_alignment import memory, poses
+    log = logging.getLogger("test")
+    context = Variables()
+    assert memory.remembered_walk(context, log) == {}
+    memory.remember_walk(context, {"rx": -271.04, "rz": 341.0}, log)
+    assert memory.remembered_walk(context, log) == {"rx": -271.0, "rz": 341.0}
+    # Not both axes, or not believable: the previous one stays.
+    memory.remember_walk(context, {"rx": -100.0}, log)
+    memory.remember_walk(context, {"rx": float("nan"), "rz": 1.0}, log)
+    assert memory.remembered_walk(context, log) == {"rx": -271.0, "rz": 341.0}
+    # Taken with another TOOL_TRF: not used.
+    monkeypatch.setattr(poses, "TOOL_TRF", tuple(v + 1.0 for v in poses.TOOL_TRF))
+    assert memory.remembered_walk(context, log) == {}
+    # Not JSON: nothing.
+    assert memory.remembered_walk(Variables(tilt_walk="{oops"), log) == {}

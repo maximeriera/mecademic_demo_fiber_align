@@ -13012,3 +13012,626 @@ mecademicpy.robot_classes.InterruptException: Activation error
 2026-11-09 20:32:05 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
 2026-11-09 20:32:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 9.699 s
 2026-11-09 20:32:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:32:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 33.611 s
+2026-11-09 20:32:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:32:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.351 s
+2026-11-09 20:33:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 58.703 s
+2026-11-09 20:33:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:33:05 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.014 s
+2026-11-09 20:33:05 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:33:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.724 s
+2026-11-09 20:33:07 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #60 steps: Move to alignment start 0.51s | Random offset 0.33s | Align fiber 58.70s | Hold final position 5.01s | Retract from alignment 0.72s (total 65.28s)
+2026-11-09 20:33:07 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #60
+2026-11-09 20:33:07 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #61
+2026-11-09 20:33:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:33:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.518 s
+2026-11-09 20:33:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:33:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.331 s
+2026-11-09 20:33:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:33:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:33:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 4.399 s
+2026-11-09 20:33:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:33:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 7.608 s
+2026-11-09 20:33:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:33:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 38.686 s
+2026-11-09 20:33:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:34:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 13.299 s
+2026-11-09 20:34:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 65.009 s
+2026-11-09 20:34:13 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:34:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.014 s
+2026-11-09 20:34:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:34:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.732 s
+2026-11-09 20:34:19 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #61 steps: Move to alignment start 0.52s | Random offset 0.33s | Align fiber 65.01s | Hold final position 5.01s | Retract from alignment 0.73s (total 71.60s)
+2026-11-09 20:34:19 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #61
+2026-11-09 20:34:19 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #62
+2026-11-09 20:34:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:34:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.519 s
+2026-11-09 20:34:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:34:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.330 s
+2026-11-09 20:34:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:34:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:34:29 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 9.221 s
+2026-11-09 20:34:29 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:34:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 13.728 s
+2026-11-09 20:34:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:35:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 36.919 s
+2026-11-09 20:35:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:35:30 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.252 s
+2026-11-09 20:35:31 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 71.222 s
+2026-11-09 20:35:31 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:35:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.011 s
+2026-11-09 20:35:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:35:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.728 s
+2026-11-09 20:35:38 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #62 steps: Move to alignment start 0.52s | Random offset 0.33s | Align fiber 71.22s | Hold final position 5.01s | Retract from alignment 0.73s (total 77.81s)
+2026-11-09 20:35:38 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #62
+2026-11-09 20:35:38 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #63
+2026-11-09 20:35:38 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:35:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.507 s
+2026-11-09 20:35:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:35:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.336 s
+2026-11-09 20:35:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:35:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:35:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 4.128 s
+2026-11-09 20:35:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:35:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 9.538 s
+2026-11-09 20:35:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:36:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 46.119 s
+2026-11-09 20:36:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:36:52 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 13.319 s
+2026-11-09 20:36:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 74.265 s
+2026-11-09 20:36:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:36:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.011 s
+2026-11-09 20:36:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:36:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.723 s
+2026-11-09 20:37:00 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #63 steps: Move to alignment start 0.51s | Random offset 0.34s | Align fiber 74.26s | Hold final position 5.01s | Retract from alignment 0.72s (total 80.84s)
+2026-11-09 20:37:00 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #63
+2026-11-09 20:37:00 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #64
+2026-11-09 20:37:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:37:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.505 s
+2026-11-09 20:37:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:37:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.346 s
+2026-11-09 20:37:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:37:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:37:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 17.422 s
+2026-11-09 20:37:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:37:29 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 10.562 s
+2026-11-09 20:37:29 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:38:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 38.744 s
+2026-11-09 20:38:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:38:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.388 s
+2026-11-09 20:38:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 78.346 s
+2026-11-09 20:38:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:38:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.011 s
+2026-11-09 20:38:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:38:25 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.725 s
+2026-11-09 20:38:26 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #64 steps: Move to alignment start 0.51s | Random offset 0.35s | Align fiber 78.35s | Hold final position 5.01s | Retract from alignment 0.72s (total 84.93s)
+2026-11-09 20:38:26 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #64
+2026-11-09 20:38:26 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #65
+2026-11-09 20:38:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:38:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.516 s
+2026-11-09 20:38:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:38:27 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.337 s
+2026-11-09 20:38:27 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:38:27 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:38:33 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 6.426 s
+2026-11-09 20:38:33 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:38:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 8.940 s
+2026-11-09 20:38:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:39:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 35.497 s
+2026-11-09 20:39:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:39:28 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.363 s
+2026-11-09 20:39:29 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 62.251 s
+2026-11-09 20:39:29 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:39:34 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.008 s
+2026-11-09 20:39:34 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:39:35 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.732 s
+2026-11-09 20:39:36 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #65 steps: Move to alignment start 0.52s | Random offset 0.34s | Align fiber 62.25s | Hold final position 5.01s | Retract from alignment 0.73s (total 68.84s)
+2026-11-09 20:39:36 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #65
+2026-11-09 20:39:36 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #66
+2026-11-09 20:39:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:39:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.520 s
+2026-11-09 20:39:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:39:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.333 s
+2026-11-09 20:39:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:39:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:39:45 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 7.807 s
+2026-11-09 20:39:45 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:39:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 8.995 s
+2026-11-09 20:39:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:40:27 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 33.899 s
+2026-11-09 20:40:27 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:40:38 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.384 s
+2026-11-09 20:40:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 62.034 s
+2026-11-09 20:40:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:40:44 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.011 s
+2026-11-09 20:40:44 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:40:45 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.730 s
+2026-11-09 20:40:46 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #66 steps: Move to alignment start 0.52s | Random offset 0.33s | Align fiber 62.03s | Hold final position 5.01s | Retract from alignment 0.73s (total 68.63s)
+2026-11-09 20:40:46 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #66
+2026-11-09 20:40:46 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #67
+2026-11-09 20:40:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:40:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.501 s
+2026-11-09 20:40:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:40:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.341 s
+2026-11-09 20:40:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:40:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:40:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 9.704 s
+2026-11-09 20:40:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:41:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 10.420 s
+2026-11-09 20:41:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:41:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 32.250 s
+2026-11-09 20:41:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:41:52 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 13.353 s
+2026-11-09 20:41:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 66.953 s
+2026-11-09 20:41:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:41:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.011 s
+2026-11-09 20:41:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:41:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.731 s
+2026-11-09 20:42:00 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #67 steps: Move to alignment start 0.50s | Random offset 0.34s | Align fiber 66.95s | Hold final position 5.01s | Retract from alignment 0.73s (total 73.54s)
+2026-11-09 20:42:00 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #67
+2026-11-09 20:42:00 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #68
+2026-11-09 20:42:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:42:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.515 s
+2026-11-09 20:42:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:42:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.341 s
+2026-11-09 20:42:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:42:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:42:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 14.057 s
+2026-11-09 20:42:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:42:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 8.834 s
+2026-11-09 20:42:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:42:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 35.528 s
+2026-11-09 20:42:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:43:13 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 13.269 s
+2026-11-09 20:43:14 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 72.793 s
+2026-11-09 20:43:14 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:43:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.008 s
+2026-11-09 20:43:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:43:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.736 s
+2026-11-09 20:43:21 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #68 steps: Move to alignment start 0.51s | Random offset 0.34s | Align fiber 72.79s | Hold final position 5.01s | Retract from alignment 0.74s (total 79.39s)
+2026-11-09 20:43:21 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #68
+2026-11-09 20:43:21 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #69
+2026-11-09 20:43:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:43:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.513 s
+2026-11-09 20:43:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:43:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.349 s
+2026-11-09 20:43:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:43:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:43:38 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 16.543 s
+2026-11-09 20:43:38 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:43:47 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 9.299 s
+2026-11-09 20:43:47 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:44:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 36.563 s
+2026-11-09 20:44:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:44:34 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.325 s
+2026-11-09 20:44:35 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 73.914 s
+2026-11-09 20:44:35 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:44:40 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.011 s
+2026-11-09 20:44:40 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:44:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.745 s
+2026-11-09 20:44:42 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #69 steps: Move to alignment start 0.51s | Random offset 0.35s | Align fiber 73.91s | Hold final position 5.01s | Retract from alignment 0.74s (total 80.53s)
+2026-11-09 20:44:42 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #69
+2026-11-09 20:44:42 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #70
+2026-11-09 20:44:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:44:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.528 s
+2026-11-09 20:44:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:44:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.347 s
+2026-11-09 20:44:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:44:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:44:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 0.287 s
+2026-11-09 20:44:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:44:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 10.855 s
+2026-11-09 20:44:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:45:31 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 37.168 s
+2026-11-09 20:45:31 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:45:45 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 13.387 s
+2026-11-09 20:45:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 62.685 s
+2026-11-09 20:45:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:45:51 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.014 s
+2026-11-09 20:45:51 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:45:51 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.718 s
+2026-11-09 20:45:52 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #70 steps: Move to alignment start 0.53s | Random offset 0.35s | Align fiber 62.68s | Hold final position 5.01s | Retract from alignment 0.72s (total 69.29s)
+2026-11-09 20:45:52 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #70
+2026-11-09 20:45:52 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #71
+2026-11-09 20:45:52 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:45:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.520 s
+2026-11-09 20:45:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:45:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.349 s
+2026-11-09 20:45:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:45:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:45:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 3.062 s
+2026-11-09 20:45:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:46:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 10.858 s
+2026-11-09 20:46:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:46:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 34.052 s
+2026-11-09 20:46:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:46:52 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.360 s
+2026-11-09 20:46:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 59.306 s
+2026-11-09 20:46:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:46:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.012 s
+2026-11-09 20:46:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:46:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.719 s
+2026-11-09 20:46:59 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #71 steps: Move to alignment start 0.52s | Random offset 0.35s | Align fiber 59.31s | Hold final position 5.01s | Retract from alignment 0.72s (total 65.91s)
+2026-11-09 20:46:59 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #71
+2026-11-09 20:46:59 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #72
+2026-11-09 20:46:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 20:47:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.515 s
+2026-11-09 20:47:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 20:47:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.343 s
+2026-11-09 20:47:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 20:47:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 20:47:00 | INFO    | http-146696      | controller             | ApplicationController:601  | [req=07749237] Stop requested for task thread: name=TaskThread-PROD type=PROD
+2026-11-09 20:47:00 | INFO    | http-146696      | controller             | Task:427  | [req=07749237] [TaskThread-PROD] Stopping task...
+2026-11-09 20:47:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 4.012 s
+2026-11-09 20:47:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 20:47:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 12.691 s
+2026-11-09 20:47:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 20:48:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 46.541 s
+2026-11-09 20:48:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 20:48:14 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 10.358 s
+2026-11-09 20:48:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 74.840 s
+2026-11-09 20:48:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 20:48:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.008 s
+2026-11-09 20:48:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 20:48:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.724 s
+2026-11-09 20:48:22 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #72 steps: Move to alignment start 0.52s | Random offset 0.34s | Align fiber 74.84s | Hold final position 5.01s | Retract from alignment 0.72s (total 81.43s)
+2026-11-09 20:48:22 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #72
+2026-11-09 20:48:22 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Home (exit)
+2026-11-09 20:48:22 | INFO    | TaskThread-PROD  | controller             | Task:276  | [TaskThread-PROD] HOME routine started.
+2026-11-09 20:48:22 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Home (exit) / Move to home position
+2026-11-09 20:48:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Home (exit) / Move to home position in 1.141 s
+2026-11-09 20:48:23 | INFO    | TaskThread-PROD  | controller             | Task:278  | [TaskThread-PROD] HOME routine completed.
+2026-11-09 20:48:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Home (exit) in 1.145 s
+2026-11-09 20:48:23 | INFO    | TaskThread-PROD  | controller             | ApplicationController:466  | --- State Change: Busy -> Ready ---
+2026-11-09 20:48:23 | INFO    | TaskThread-PROD  | controller             | Task:236  | [TaskThread-PROD] Task finished.
+2026-11-09 21:07:01 | INFO    | MainThread       | controller             | ApplicationController:1182 | Shutting down Robot Controller...
+2026-11-09 21:07:01 | INFO    | MainThread       | controller             | ApplicationController:466  | --- State Change: Ready -> Faulted ---
+2026-11-09 21:07:01 | INFO    | MainThread       | controller             | DataHub:322  | DataHub stopped.
+2026-11-09 21:07:01 | WARNING | MonitorThread    | controller             | ApplicationController:1087 | [MonitorThread] Shutdown complete.
+2026-11-09 21:07:01 | INFO    | MainThread       | controller             | ApplicationController:466  | --- State Change: Faulted -> Off ---
+2026-11-09 21:07:01 | INFO    | MainThread       | controller             | ApplicationController:1233 | Controller shutdown complete.
+2026-11-09 21:07:03 | INFO    | MainThread       | controller             | ApplicationController:104  | Loading controller config from: /webapp/app_logic/config.yaml
+2026-11-09 21:07:03 | DEBUG   | MainThread       | controller             | ManualActions:24   | ManualActions: trying module 'manual_actions'
+2026-11-09 21:07:03 | DEBUG   | MainThread       | controller             | ManualActions:56   | ManualActions: module 'manual_actions' unavailable (No module named 'manual_actions'). Trying next candidate.
+2026-11-09 21:07:03 | DEBUG   | MainThread       | controller             | ManualActions:24   | ManualActions: trying module 'app_logic.manual_actions'
+2026-11-09 21:07:03 | INFO    | MainThread       | controller             | ManualActions:45   | ManualActions: loaded 9 action(s) from 'app_logic.manual_actions': ['align_fiber', 'close_gripper', 'full_cycle', 'move_to_alignment', 'open_gripper', 'pick_fiber', 'place_fiber', 'random_offset', 'retract_fiber']
+2026-11-09 21:07:03 | INFO    | MainThread       | controller             | ApplicationController:290  | Manual actions configured in YAML: ['pick_fiber', 'move_to_alignment', 'random_offset', 'align_fiber', 'retract_fiber', 'place_fiber', 'full_cycle', 'open_gripper', 'close_gripper'] | registry keys discovered: ['align_fiber', 'close_gripper', 'full_cycle', 'move_to_alignment', 'open_gripper', 'pick_fiber', 'place_fiber', 'random_offset', 'retract_fiber']
+2026-11-09 21:07:03 | INFO    | MainThread       | controller             | ApplicationController:303  | Manual actions ready: ['pick_fiber', 'move_to_alignment', 'random_offset', 'align_fiber', 'retract_fiber', 'place_fiber', 'full_cycle', 'open_gripper', 'close_gripper']
+2026-11-09 21:07:04 | INFO    | MainThread       | controller             | ContextStore:232  | Restored 38 persisted context value(s) from /webapp/app_logic/context.state.json.
+2026-11-09 21:07:04 | INFO    | MainThread       | controller             | ContextStore:143  | Context loaded from /webapp/app_logic/context.yaml: 30 param(s), 10 variable(s), 39 persisted to context.state.json.
+2026-11-09 21:07:04 | INFO    | MainThread       | controller             | ApplicationController:217  | Production history: /webapp/history/webapp
+2026-11-09 21:07:04 | INFO    | MainThread       | controller             | ApplicationController:340  | Creating mecademic device: meca_robot
+2026-11-09 21:07:04 | INFO    | MainThread       | controller             | ApplicationController:340  | Creating smaract_mcs2 device: fiber_gripper
+2026-11-09 21:07:04 | INFO    | MainThread       | controller             | ApplicationController:340  | Creating thorlabs_pm device: power_meter
+2026-11-09 21:07:04 | INFO    | MainThread       | controller             | ApplicationController:117  | ApplicationController initialized with devices: meca_robot, fiber_gripper, power_meter
+2026-11-09 21:07:08 | INFO    | http-117         | controller             | ApplicationController:466  | [req=96828bc2] --- State Change: Off -> Initializing ---
+2026-11-09 21:07:08 | INFO    | http-117         | controller             | ApplicationController:411  | [req=96828bc2] Initializing device: meca_robot
+2026-11-09 21:07:08 | INFO    | http-117         | controller             | ApplicationController:411  | [req=96828bc2] Initializing device: fiber_gripper
+2026-11-09 21:07:08 | INFO    | http-117         | controller             | ApplicationController:411  | [req=96828bc2] Initializing device: power_meter
+2026-11-09 21:07:09 | INFO    | http-117         | controller             | ApplicationController:420  | [req=96828bc2] All devices Initialized and Ready.
+2026-11-09 21:07:09 | INFO    | http-117         | controller             | DataHub:302  | [req=96828bc2] DataHub started: 1 source(s), 0 video(s), analysis=False.
+2026-11-09 21:07:09 | INFO    | http-117         | controller             | ApplicationController:275  | [req=96828bc2] Custom view 'app_logic.custom_view' started.
+2026-11-09 21:07:09 | INFO    | http-117         | controller             | ApplicationController:466  | [req=96828bc2] --- State Change: Initializing -> Ready ---
+2026-11-09 21:07:15 | INFO    | http-270         | controller             | ApplicationController:511  | [req=fdf2bb89] Task start requested: type=PROD manual_action_key=None state=Ready
+2026-11-09 21:07:15 | INFO    | http-270         | controller             | ApplicationController:547  | [req=fdf2bb89] Starting task thread: name=TaskThread-PROD type=PROD manual_action_key=None
+2026-11-09 21:07:15 | INFO    | TaskThread-PROD  | controller             | ApplicationController:466  | --- State Change: Ready -> Busy ---
+2026-11-09 21:07:15 | INFO    | TaskThread-PROD  | controller             | Task:196  | [TaskThread-PROD] Starting task=Production manual_action_key=None devices=['fiber_gripper', 'meca_robot', 'power_meter']
+2026-11-09 21:07:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Home (entry)
+2026-11-09 21:07:15 | INFO    | TaskThread-PROD  | controller             | Task:276  | [TaskThread-PROD] HOME routine started.
+2026-11-09 21:07:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Home (entry) / Move to home position
+2026-11-09 21:07:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Home (entry) / Move to home position in 0.050 s
+2026-11-09 21:07:15 | INFO    | TaskThread-PROD  | controller             | Task:278  | [TaskThread-PROD] HOME routine completed.
+2026-11-09 21:07:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Home (entry) in 0.051 s
+2026-11-09 21:07:15 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #1
+2026-11-09 21:07:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:07:16 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 1.622 s
+2026-11-09 21:07:16 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:07:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.331 s
+2026-11-09 21:07:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:07:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:07:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 4.468 s
+2026-11-09 21:07:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:07:25 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.309 s
+2026-11-09 21:07:25 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:07:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 16.595 s
+2026-11-09 21:07:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:07:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 15.712 s
+2026-11-09 21:07:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 42.522 s
+2026-11-09 21:07:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:08:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.008 s
+2026-11-09 21:08:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:08:05 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.734 s
+2026-11-09 21:08:06 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #1 steps: Move to alignment start 1.62s | Random offset 0.33s | Align fiber 42.52s | Hold final position 5.01s | Retract from alignment 0.73s (total 50.22s)
+2026-11-09 21:08:06 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #1
+2026-11-09 21:08:06 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #2
+2026-11-09 21:08:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:08:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.532 s
+2026-11-09 21:08:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:08:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.344 s
+2026-11-09 21:08:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:08:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:08:10 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 3.421 s
+2026-11-09 21:08:10 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:08:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.458 s
+2026-11-09 21:08:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:08:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 10.860 s
+2026-11-09 21:08:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:08:50 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 24.589 s
+2026-11-09 21:08:51 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 44.444 s
+2026-11-09 21:08:51 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:08:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.009 s
+2026-11-09 21:08:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:08:57 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.715 s
+2026-11-09 21:08:58 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #2 steps: Move to alignment start 0.53s | Random offset 0.34s | Align fiber 44.44s | Hold final position 5.01s | Retract from alignment 0.71s (total 51.04s)
+2026-11-09 21:08:58 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #2
+2026-11-09 21:08:58 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #3
+2026-11-09 21:08:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:08:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.506 s
+2026-11-09 21:08:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:08:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.329 s
+2026-11-09 21:08:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:08:59 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:09:03 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 4.588 s
+2026-11-09 21:09:03 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:09:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.691 s
+2026-11-09 21:09:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:09:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 10.949 s
+2026-11-09 21:09:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:09:35 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 15.731 s
+2026-11-09 21:09:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 37.120 s
+2026-11-09 21:09:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:09:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.007 s
+2026-11-09 21:09:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:09:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.748 s
+2026-11-09 21:09:43 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #3 steps: Move to alignment start 0.51s | Random offset 0.33s | Align fiber 37.12s | Hold final position 5.01s | Retract from alignment 0.75s (total 43.71s)
+2026-11-09 21:09:43 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #3
+2026-11-09 21:09:43 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #4
+2026-11-09 21:09:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:09:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.504 s
+2026-11-09 21:09:43 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:09:44 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.342 s
+2026-11-09 21:09:44 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:09:44 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:09:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 5.045 s
+2026-11-09 21:09:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:09:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.848 s
+2026-11-09 21:09:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:10:02 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 8.323 s
+2026-11-09 21:10:02 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:10:14 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 12.563 s
+2026-11-09 21:10:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 31.636 s
+2026-11-09 21:10:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:10:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.007 s
+2026-11-09 21:10:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:10:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.741 s
+2026-11-09 21:10:22 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #4 steps: Move to alignment start 0.50s | Random offset 0.34s | Align fiber 31.64s | Hold final position 5.01s | Retract from alignment 0.74s (total 38.23s)
+2026-11-09 21:10:22 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #4
+2026-11-09 21:10:22 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #5
+2026-11-09 21:10:22 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:10:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.515 s
+2026-11-09 21:10:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:10:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.336 s
+2026-11-09 21:10:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:10:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:10:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 2.805 s
+2026-11-09 21:10:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:10:34 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 8.262 s
+2026-11-09 21:10:34 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:10:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 8.001 s
+2026-11-09 21:10:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:11:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 18.187 s
+2026-11-09 21:11:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 38.041 s
+2026-11-09 21:11:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:11:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.010 s
+2026-11-09 21:11:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:11:07 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.720 s
+2026-11-09 21:11:08 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #5 steps: Move to alignment start 0.52s | Random offset 0.34s | Align fiber 38.04s | Hold final position 5.01s | Retract from alignment 0.72s (total 44.62s)
+2026-11-09 21:11:08 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #5
+2026-11-09 21:11:08 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #6
+2026-11-09 21:11:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:11:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.540 s
+2026-11-09 21:11:08 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:11:09 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.333 s
+2026-11-09 21:11:09 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:11:09 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:11:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 10.257 s
+2026-11-09 21:11:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:11:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.596 s
+2026-11-09 21:11:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:11:32 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 8.463 s
+2026-11-09 21:11:32 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:11:47 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 15.264 s
+2026-11-09 21:11:48 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 39.432 s
+2026-11-09 21:11:48 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:11:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.009 s
+2026-11-09 21:11:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:11:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.730 s
+2026-11-09 21:11:55 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #6 steps: Move to alignment start 0.54s | Random offset 0.33s | Align fiber 39.43s | Hold final position 5.01s | Retract from alignment 0.73s (total 46.04s)
+2026-11-09 21:11:55 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #6
+2026-11-09 21:11:55 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #7
+2026-11-09 21:11:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:11:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.502 s
+2026-11-09 21:11:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:11:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.348 s
+2026-11-09 21:11:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:11:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:12:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 5.274 s
+2026-11-09 21:12:01 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:12:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 2.957 s
+2026-11-09 21:12:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:12:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 10.580 s
+2026-11-09 21:12:15 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:12:33 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 18.396 s
+2026-11-09 21:12:34 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 37.894 s
+2026-11-09 21:12:34 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:12:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.008 s
+2026-11-09 21:12:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:12:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.715 s
+2026-11-09 21:12:40 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #7 steps: Move to alignment start 0.50s | Random offset 0.35s | Align fiber 37.89s | Hold final position 5.01s | Retract from alignment 0.72s (total 44.47s)
+2026-11-09 21:12:40 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #7
+2026-11-09 21:12:40 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #8
+2026-11-09 21:12:40 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:12:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.521 s
+2026-11-09 21:12:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:12:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.342 s
+2026-11-09 21:12:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:12:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:12:44 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 2.421 s
+2026-11-09 21:12:44 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:12:48 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.324 s
+2026-11-09 21:12:48 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:12:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 9.875 s
+2026-11-09 21:12:58 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:13:16 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 17.780 s
+2026-11-09 21:13:16 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 35.154 s
+2026-11-09 21:13:16 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:13:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.010 s
+2026-11-09 21:13:21 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:13:22 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.735 s
+2026-11-09 21:13:23 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #8 steps: Move to alignment start 0.52s | Random offset 0.34s | Align fiber 35.15s | Hold final position 5.01s | Retract from alignment 0.73s (total 41.76s)
+2026-11-09 21:13:23 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #8
+2026-11-09 21:13:23 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #9
+2026-11-09 21:13:23 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:13:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.506 s
+2026-11-09 21:13:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:13:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.342 s
+2026-11-09 21:13:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:13:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:13:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 25.372 s
+2026-11-09 21:13:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:13:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 3.651 s
+2026-11-09 21:13:53 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:14:02 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 8.470 s
+2026-11-09 21:14:02 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:14:11 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 9.551 s
+2026-11-09 21:14:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 48.191 s
+2026-11-09 21:14:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:14:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.009 s
+2026-11-09 21:14:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:14:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.725 s
+2026-11-09 21:14:19 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #9 steps: Move to alignment start 0.51s | Random offset 0.34s | Align fiber 48.19s | Hold final position 5.01s | Retract from alignment 0.72s (total 54.77s)
+2026-11-09 21:14:19 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #9
+2026-11-09 21:14:19 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #10
+2026-11-09 21:14:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:14:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.521 s
+2026-11-09 21:14:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:14:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.330 s
+2026-11-09 21:14:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:14:20 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:14:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 3.925 s
+2026-11-09 21:14:24 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:14:28 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.548 s
+2026-11-09 21:14:28 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:14:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 10.629 s
+2026-11-09 21:14:39 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:14:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 9.701 s
+2026-11-09 21:14:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 29.452 s
+2026-11-09 21:14:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:14:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.010 s
+2026-11-09 21:14:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:14:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.732 s
+2026-11-09 21:14:56 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #10 steps: Move to alignment start 0.52s | Random offset 0.33s | Align fiber 29.45s | Hold final position 5.01s | Retract from alignment 0.73s (total 36.05s)
+2026-11-09 21:14:56 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #10
+2026-11-09 21:14:56 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #11
+2026-11-09 21:14:56 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:14:57 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.516 s
+2026-11-09 21:14:57 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:14:57 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.339 s
+2026-11-09 21:14:57 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:14:57 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:15:09 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 12.243 s
+2026-11-09 21:15:09 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:15:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 3.067 s
+2026-11-09 21:15:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:15:22 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 9.465 s
+2026-11-09 21:15:22 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:15:40 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 18.297 s
+2026-11-09 21:15:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 43.945 s
+2026-11-09 21:15:41 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:15:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.007 s
+2026-11-09 21:15:46 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:15:47 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.727 s
+2026-11-09 21:15:48 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #11 steps: Move to alignment start 0.52s | Random offset 0.34s | Align fiber 43.94s | Hold final position 5.01s | Retract from alignment 0.73s (total 50.53s)
+2026-11-09 21:15:48 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #11
+2026-11-09 21:15:48 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #12
+2026-11-09 21:15:48 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:15:48 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.506 s
+2026-11-09 21:15:48 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:15:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.346 s
+2026-11-09 21:15:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:15:49 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:16:02 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 13.321 s
+2026-11-09 21:16:02 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:16:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 4.515 s
+2026-11-09 21:16:06 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:16:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 10.104 s
+2026-11-09 21:16:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:16:29 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 12.151 s
+2026-11-09 21:16:30 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 41.020 s
+2026-11-09 21:16:30 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:16:35 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.010 s
+2026-11-09 21:16:35 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:16:35 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.725 s
+2026-11-09 21:16:36 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #12 steps: Move to alignment start 0.51s | Random offset 0.35s | Align fiber 41.02s | Hold final position 5.01s | Retract from alignment 0.73s (total 47.61s)
+2026-11-09 21:16:36 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #12
+2026-11-09 21:16:36 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #13
+2026-11-09 21:16:36 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:16:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.515 s
+2026-11-09 21:16:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:16:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.330 s
+2026-11-09 21:16:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:16:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:16:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 4.214 s
+2026-11-09 21:16:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:16:45 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 3.202 s
+2026-11-09 21:16:45 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:16:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 10.571 s
+2026-11-09 21:16:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:17:11 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 15.278 s
+2026-11-09 21:17:11 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 33.929 s
+2026-11-09 21:17:11 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:17:16 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.009 s
+2026-11-09 21:17:16 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:17:17 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.741 s
+2026-11-09 21:17:18 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #13 steps: Move to alignment start 0.52s | Random offset 0.33s | Align fiber 33.93s | Hold final position 5.01s | Retract from alignment 0.74s (total 40.52s)
+2026-11-09 21:17:18 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #13
+2026-11-09 21:17:18 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #14
+2026-11-09 21:17:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:17:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.513 s
+2026-11-09 21:17:18 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:17:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.347 s
+2026-11-09 21:17:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:17:19 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:17:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 17.694 s
+2026-11-09 21:17:37 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:17:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 5.639 s
+2026-11-09 21:17:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:17:51 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 8.590 s
+2026-11-09 21:17:51 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:18:03 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 12.591 s
+2026-11-09 21:18:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 45.522 s
+2026-11-09 21:18:04 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:18:09 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.007 s
+2026-11-09 21:18:09 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:18:10 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.736 s
+2026-11-09 21:18:11 | INFO    | TaskThread-PROD  | controller             | StepTracker:603  | Cycle #14 steps: Move to alignment start 0.51s | Random offset 0.35s | Align fiber 45.52s | Hold final position 5.01s | Retract from alignment 0.74s (total 52.13s)
+2026-11-09 21:18:11 | INFO    | TaskThread-PROD  | controller             | Task:364  | [TaskThread-PROD] PROD cycle complete #14
+2026-11-09 21:18:11 | INFO    | TaskThread-PROD  | controller             | Task:350  | [TaskThread-PROD] PROD cycle start #15
+2026-11-09 21:18:11 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Move to alignment start
+2026-11-09 21:18:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Move to alignment start in 0.517 s
+2026-11-09 21:18:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Random offset
+2026-11-09 21:18:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Random offset in 0.342 s
+2026-11-09 21:18:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber
+2026-11-09 21:18:12 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Acquire
+2026-11-09 21:18:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Acquire in 14.103 s
+2026-11-09 21:18:26 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Center
+2026-11-09 21:18:33 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Center in 6.548 s
+2026-11-09 21:18:33 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Angle
+2026-11-09 21:18:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Angle in 8.870 s
+2026-11-09 21:18:42 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Align fiber / Peak
+2026-11-09 21:18:54 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber / Peak in 12.075 s
+2026-11-09 21:18:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Align fiber in 42.577 s
+2026-11-09 21:18:55 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Hold final position
+2026-11-09 21:19:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Hold final position in 5.013 s
+2026-11-09 21:19:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:354  | Step begin: Retract from alignment
+2026-11-09 21:19:00 | DEBUG   | TaskThread-PROD  | controller             | StepTracker:124  | Step end: Retract from alignment in 0.728 s
