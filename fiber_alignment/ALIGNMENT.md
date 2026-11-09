@@ -53,7 +53,7 @@ is outlined in yellow.
 
 | Phase | What the robot does | What the card shows |
 |---|---|---|
-| **Acquire**: find the light | It goes to where this fiber aligned last time, if it has before, and measures the meter's noise. If light already reaches the meter, it goes straight to Center (unless the full search is on: see below). Otherwise it sweeps Lissajous curves around the start: sideways first, then in angle, over a small disc, then larger ones (up to 500 µm and 3°). A faint hint of light makes it start again from there. It stops at the first light, goes back to it and checks it at rest, looking around slowly if the light was not quite there. Still dark, it sweeps in angle again at 6 points around the start. | A 3D landscape of the power along the latest scan, always over X/Z: a tilt scan turns the fiber without moving it sideways, so it shows as a column of readings at one spot. The line under it says where the scan is centred: "remembered pose", "hint 1", "ring 3/6", or nothing for the start; "light at the remembered pose" when the fiber found light where it aligned last time. The "light" mark on the colour bar is the level that counts as light. It keeps filling during the later phases: their readings join the map, which shows the best power seen at each spot, so the landscape rises to the final peak as the robot climbs. |
+| **Acquire**: find the light | It goes to where this fiber aligned last time, if it has before, and measures the meter's noise. If light already reaches the meter, it goes straight to Center (unless the full search is on: see below). Otherwise it sweeps Lissajous curves around the start: sideways first, then in angle, over a small disc, then larger ones (up to 500 µm and 3°). A faint hint of light makes it start again from there. It stops at the first light, goes back to it and checks it at rest, looking around slowly if the light was not quite there. Still dark, it sweeps in angle again at 6 points around the start. | A 3D landscape of the power over the axes of the search running: X/Z during a sideways scan, Rx/Rz during a tilt scan, so both Lissajous curves show. It keeps every scan of that search, restarts included. From Center on, it is over X/Z. The line under it says where the scan is centred: "remembered pose", "hint 1", "ring 3/6", or nothing for the start; "light at the remembered pose" when the fiber found light where it aligned last time. The "light" mark on the colour bar is the level that counts as light. It keeps filling during the later phases: their readings join the map, which shows the best power seen at each spot, so the landscape rises to the final peak as the robot climbs. |
 | **Center**: centre on the beam | It sweeps across the beam along X, then along Z, both ways. It fits a bell curve to each sweep and moves to its top, until the top stops moving. | The latest X and Z sweeps (green forward, blue backward), the fitted bell curve, and the chosen centre in yellow, in dB against the source on a log scale of the loss (the last dB under the source as tall as the 40 under it). |
 | **Angle**: square the angle | For Rx, then Rz, it tries tilts stepping away from the current one while the power rises, re-centring at each tilt. A curve through the best tilts picks the angle. It repeats with finer steps while that still gains. | Top: the power against each tilt, with the fitted curve and the "walk": how far the best position moves per degree of tilt. Bottom: the sideways re-centring sweeps. All in dB against the source on a log scale of the loss, the tilts zoomed on the latest round. |
 | **Peak**: the last few µm, and the last hundredths of a degree | First, small circles read on the move, as in the cell's first script: one sideways (about 36 µm across), then one in angle (about 0.03°). The power around each circle shows which way is uphill, and the robot steps that way; shorter steps after one goes too far. It repeats until the steps are lost in the noise, usually 1 to 4 rounds of about 2.5 s on the cell. Then it takes readings at rest on a small square grid, 5×5 by default (±0.2 beam width, about ±50 µm). It fits a dome to them and steps to its top, until the steps are tiny. It ends on the best reading taken at rest. | The grid readings and the sideways circles as a 3D landscape in dB against the source (on a log scale of the loss, so tenths of a dB show), the centres on its floor, and the size of every step, circles then grid: lateral ones in µm, tilt ones in m°. |
@@ -155,15 +155,16 @@ offsets. The rows published on `align_sample` use them too.
   a translation scan, then a rotation scan, over 1/3, then 2/3, then all of
   `acquire_radius_um` / `acquire_radius_deg`. Near first, then wider.
 - **A hint of light restarts the search.** A hint is two readings in a row
-  at least 3× the power at rest at the centre, at least noise + 5σ and a
-  fiftieth of the detection level, and never more than the detection level
-  itself. It stops the scan.
+  whose loss against the source is `hint_gain_db` (+3 dB: twice the power)
+  better than at rest at the centre, at least noise + 5σ and at most 17 dB
+  under the detection level (a fiftieth of it), and never more than the
+  detection level itself. It stops the scan.
   - So low because, read on the move, light can show far below what it
     is: on the cell on 2026-11-06, scans crossing 1-70 µW read 50-100 nW
     (the meter slow to leave its lowest range). At rest it shows.
   - Confirmed at rest, the hint becomes the new centre, and the scans start
     again from the smallest disc around it.
-  - Each restart needs 3× more power than the last, so there are only a few.
+  - Each restart needs `hint_gain_db` more than the last, so there are only a few.
   - Payloads then say `around: "hint k"`.
 - **Light, confirmed at rest, ends Acquire.** Readings taken on the move may
   show the light out of step with their pose: late if the meter lags,
@@ -197,7 +198,11 @@ offsets. The rows published on `align_sample` use them too.
 - **Each payload** on `align_acquire` says where its scan is centred
   (`around`: "remembered pose", "start", "hint k", "ring k/6"), with
   `pattern: "lissajous"`, how far it reaches (`radius`), line spacing (`pitch`) and
-  reading spacing (`spacing`). The Acquire card maps the latest scan, over X/Z.
+  reading spacing (`spacing`), and the `hint_gain_db` in force. The Acquire
+  card maps the search running over its axes (`search_axes` in
+  `PHASE_VIEWS`): every translation scan over X/Z, every rotation scan over
+  Rx/Rz (by the readings' kind of move), restarts kept. Once a later phase
+  starts, it maps every reading over X/Z (`axes`).
 
 **Center** (`center`, `cross_scan`)
 
@@ -355,6 +360,7 @@ does not apply to it until you press Reset on it.
 | `acquire_capture_deg` | 0.3 | The same in tilt (~0.45° on the cell). Sizes the rotation scans' lines. |
 | `acquire_ring_um` | 400 | How far around the start the ring of rotation scans runs, when all the scans found nothing: about 1.5 × `acquire_capture_um`. 0: no ring. |
 | `signal_detect_uw` | 0.005 | Lowest power counted as light, raised to noise + 8σ. |
+| `hint_gain_db` | 3.0 | How much better than at the search's centre a reading's loss must be to count as a hint of light, which the first-light search restarts around (3 dB: twice the power). |
 | `acquire_full_search` | true | Run a translation then a rotation scan over the full radius first, even with light at the start (demo). |
 | `use_remembered_pose` | true | Start where this fiber aligned last (`fiber_poses`). Off: always search from where the alignment starts. |
 | `peak_grid` | 5 | Readings per side of the Peak pattern: odd, 3 to 9 (anything else is refused before the robot moves). More readings give a finer grid and a better fit, but a slower phase. |

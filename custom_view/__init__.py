@@ -30,7 +30,8 @@ algorithm.py; app_logic/tests/fiber_alignment/test_contract.py checks it):
     scan run over their full disc first), ``found``, and ``search``: null
     after a warm start, else "angle" (a Lissajous scan in rx/rz) or
     "lateral" (one in x/z), published as each scan starts and as it ends on
-    light confirmed at rest, with ``pattern`` ("lissajous"), ``radius`` (how
+    light confirmed at rest, with ``pattern`` ("lissajous"), ``hint_gain_db``
+    (how much better a hint's loss is than the centre's), ``radius`` (how
     far it reaches from its centre), ``pitch`` (its line spacing), ``spacing`` (between
     readings), ``unit`` (° or µm) and ``restarts`` (hints of light the search
     restarted from so far), and once found ``at`` (the scan's two axes) and

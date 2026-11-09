@@ -173,6 +173,16 @@ params:
     persist: true
     description: Lowest power the search counts as light (µW). Raised automatically above the noise measured at the start.
 
+  hint_gain_db:
+    type: float
+    # 3 dB: twice the power. Each restart needs as much again over the new
+    # centre, so there are only a few. Floored above the noise and capped at
+    # the detection level (fiber_alignment/algorithm.py, HINT_*).
+    default: 3.0
+    editable_when_idle: true
+    persist: true
+    description: A reading counts as a hint of light, and the first-light search restarts around it, when its loss against the source is at least this many dB better than at the search's centre (3 dB is twice the power).
+
   acquire_full_search:
     type: bool
     # For demos: off, light at the start skips the search and each scan

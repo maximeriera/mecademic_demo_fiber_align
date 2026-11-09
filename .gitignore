@@ -2,11 +2,13 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.pyc
 
 # C extensions
 *.so
 
 logs/
+*.log*
 # backups/
 
 # OS / editor cruft

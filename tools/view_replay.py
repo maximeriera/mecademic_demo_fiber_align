@@ -149,13 +149,17 @@ class Replay:
             time.sleep(1.0 / POWER_RATE_HZ)
 
     def _acquire_map_points(self) -> int:
-        # As the page does (renderMap): from the start of the latest scan of the latest search.
+        # As the page does (renderMap): once a later phase started, every reading
+        # from Acquire on; else the readings of every scan of the latest search
+        # (its kind of move), restarts included.
         acquire = self.run.context.published("align_acquire")
         search = acquire[-1].get("search") if acquire else None
-        runs = [a for a in acquire if a.get("search") == search] if search else []
-        begun = [a for a in runs if not a.get("found")]
-        since = begun[-1]["t"] if begun else min((a["t"] for a in runs), default=-math.inf)
-        return sum(1 for row in self.run.rows if row[9] >= since)
+        index = algorithm.PHASES.index("Acquire")
+        rows = self.run.rows
+        if not search or any(row[8] > index for row in rows):
+            return sum(1 for row in rows if row[8] >= index or row[8] < 0)
+        kind = {"angle": "ang", "lateral": "cart"}[search]
+        return sum(1 for row in rows if row[8] == index and row[7] == kind)
 
     def status(self) -> dict:
         run = self.run

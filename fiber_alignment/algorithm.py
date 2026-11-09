@@ -20,8 +20,9 @@ the custom view as PHASE_VIEWS declares:
    this fiber (``io.seed``) if there is one, else the start. Unless light
    already reaches the meter, Lissajous scans of growing discs around it,
    a translation (x/z) then a rotation (Rx/Rz) at each size. Any hint of
-   light, well above the centre's power but under the detection level,
-   confirmed at rest, becomes the new centre: the scans start again from
+   light, a loss ``hint_gain_db`` better than the centre's but under the
+   detection level, confirmed at rest, becomes the new centre: the scans
+   start again from
    the smallest disc around it. Light at the detection level, confirmed at
    rest, ends the search; back at the pose of a reading taken on the move,
    a fiber that misses the light (the meter lagging, or poses read late)
@@ -85,7 +86,10 @@ PHASES = ("Acquire", "Center", "Angle", "Peak")
 #: readings of the later phases, to the end of the run, with the best power
 #: seen at each spot: the landscape rises as the alignment climbs.
 PHASE_VIEWS = {
-    "Acquire": {"type": "map", "axes": ["x", "z"], "until_end": True},
+    # Over the axes of the search running: a rotation scan's Lissajous shows
+    # over Rx/Rz. Once Center starts, over X/Z, where the later phases climb.
+    "Acquire": {"type": "map", "axes": ["x", "z"], "search_axes": {"lateral": ["x", "z"], "angle": ["rx", "rz"]},
+                "until_end": True},
     "Center": {"type": "profiles", "slots": ["x", "z"]},
     "Angle": {"type": "profiles", "slots": ["rx", "rz", "x", "z"]},
     "Peak": {"type": "peak", "axes": ["x", "z"]},
@@ -142,20 +146,21 @@ LISSAJOUS_COVER = 0.7
 LISSAJOUS_READING = 0.35
 #: Moves queued per scan: a long path runs as consecutive scans.
 SCAN_CHUNK = 400
-#: A hint of light: HINT_READINGS readings in a row at HINT_RATIO times the
-#: power at rest at the search's centre, at least noise + HINT_SIGMAS σ and
-#: HINT_OF_DETECT of the detection level (never more than the detection
-#: level itself: light is light, however bright the centre already is).
-#: Confirmed at rest, it becomes the new centre and the search starts again
-#: around it, from the smallest disc.
+#: A hint of light: HINT_READINGS readings in a row whose loss against the
+#: source is hint_gain_db (context.yaml) better than at the search's centre,
+#: at rest; at least noise + HINT_SIGMAS σ, and at most HINT_UNDER_DETECT_DB
+#: under the detection level (never more than the detection level itself:
+#: light is light, however bright the centre already is). Confirmed at rest,
+#: it becomes the new centre and the search starts again around it, from the
+#: smallest disc.
 #: Read on the move, light can show far below what it is: on the cell
 #: (2026-11-06, ~0.1 nW of stray light), scans crossing 1-70 µW read only
 #: 50-100 nW (the meter slow to leave its lowest range). A floor of a quarter
-#: of the 0.5 µW detection level ignored them, and 9 runs of 45 never found
-#: the light; 1/50 of it takes them, and at rest they show the light.
-HINT_RATIO = 3.0
+#: of the 0.5 µW detection level (6 dB under it) ignored them, and 9 runs of
+#: 45 never found the light; 17 dB under it (1/50) takes them, and at rest
+#: they show the light.
 HINT_SIGMAS = 5.0
-HINT_OF_DETECT = 0.02
+HINT_UNDER_DETECT_DB = 17.0
 HINT_READINGS = 2
 #: Once light shows, a scan goes on while it grows, and stops once it falls
 #: under PAST_PEAK of its best: the top of the crossing, not its edge.
@@ -339,17 +344,20 @@ class _Search:
 
     #: The fields every "acquire" payload carries (noise, detection level, ...).
     info: Dict
-    #: The power at rest at the search's centre (W): a hint beats it HINT_RATIO times.
+    #: The power at rest at the search's centre (W): a hint's loss beats its own by gain_db.
     centre_w: float
     #: The lowest power a hint may have (W).
     hint_floor_w: float
     #: The detection level (W): a hint never needs more, light is light.
     detect_w: float
+    #: How much better a hint's loss against the source is than the centre's (dB): hint_gain_db.
+    gain_db: float = 3.0
     restarts: int = 0
     scans: int = 0
 
     def hint_w(self) -> float:
-        return min(self.detect_w, max(self.hint_floor_w, HINT_RATIO * self.centre_w))
+        """The power (W) a hint needs: a loss gain_db better than the centre's (the source cancels out), floored, capped."""
+        return min(self.detect_w, max(self.hint_floor_w, self.centre_w * 10.0 ** (self.gain_db / 10.0)))
 
 
 def acquire(io: AlignmentIO, state: _State) -> None:
@@ -383,15 +391,17 @@ def acquire(io: AlignmentIO, state: _State) -> None:
         state.baseline_w = noise if math.isfinite(noise) else 0.0
         state.detect_w = max(s.signal_detect_w, noise + NOISE_SIGMAS * sigma) if math.isfinite(noise) else s.signal_detect_w
     info = {"noise_w": noise, "sigma_w": sigma, "detect_w": state.detect_w, "warm": warm, "full": s.full_search,
-            "pattern": "lissajous", "around": "start" if seed is None else "remembered pose"}
+            "pattern": "lissajous", "hint_gain_db": s.hint_gain_db,
+            "around": "start" if seed is None else "remembered pose"}
     if warm and not s.full_search:
         state.peak_w = noise
         io.publish("acquire", {**info, "search": None, "found": True,
                                "at": [round(state.pos["x"], 5), round(state.pos["z"], 5)], "power_w": noise})
         return
     floor = noise + HINT_SIGMAS * sigma if math.isfinite(noise) else 0.0
-    search = _Search(info, centre_w=max(0.0, state.baseline_w), hint_floor_w=max(HINT_OF_DETECT * state.detect_w, floor),
-                     detect_w=state.detect_w)
+    search = _Search(info, centre_w=max(0.0, state.baseline_w),
+                     hint_floor_w=max(state.detect_w * 10.0 ** (-HINT_UNDER_DETECT_DB / 10.0), floor),
+                     detect_w=state.detect_w, gain_db=s.hint_gain_db)
     if s.full_search and full_search(io, state, search):
         return
     if search_rounds(io, state, search, info["around"]):

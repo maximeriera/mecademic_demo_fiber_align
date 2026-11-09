@@ -739,13 +739,17 @@
 
     // A "map" card: the phase's readings as a 3D landscape over two axes.
     // When the phase searches ("acquire" payloads with a "search"), the
-    // landscape follows the latest search, over the axes the view declares
-    // for it ("search_axes"), with the readings of its latest run only (a
-    // search may run several times, centred elsewhere: "around"). The light
-    // detection level is marked on the colour bar. A map "until_end" goes on
-    // with the readings of the later phases, to the end of the run, and its
-    // surface shows the best power seen at each spot.
+    // landscape follows the latest search over the axes the view declares
+    // for it ("search_axes"), with the readings of every scan of that search
+    // (by their kind of move: SEARCH_KINDS), restarts included: nothing seen
+    // is dropped when the search starts again elsewhere. Once a later phase
+    // starts, over the view's own axes, where the later phases climb, with
+    // every reading (a run that ends in the phase keeps its search's axes).
+    // The light detection level is marked on the colour bar. A map
+    // "until_end" goes on with the readings of the later phases, to the end
+    // of the run, and its surface shows the best power seen at each spot.
     const SEARCH_NAMES = { angle: 'tilt search', lateral: 'lateral search' };
+    const SEARCH_KINDS = { angle: 'ang', lateral: 'cart' };
 
     function renderMap(view, name) {
         const canvas = document.createElement('canvas');
@@ -763,20 +767,22 @@
                 const acquire = inPhase(run.published.acquire, phase);
                 const last = acquire[acquire.length - 1];
                 const search = last && last.search;
-                const keys = (search && view.search_axes && view.search_axes[search]) || view.axes || DEFAULT_VIEW.axes;
+                const movedOn = run.phaseLog.some(p => p.index > phase.index);
+                const searchKeys = !movedOn && search && view.search_axes && view.search_axes[search];
+                const keys = searchKeys || view.axes || DEFAULT_VIEW.axes;
                 const axes = keys.map(a => AXES[a] || AXES.x);
                 // The test reads which axes are shown.
                 canvas.dataset.axes = keys.join(',');
-                // Each run of a search starts with a payload not "found" yet.
-                const runs = acquire.filter(a => a.search === search);
-                const begun = runs.filter(a => !a.found);
-                const since = !search ? -Infinity : begun.length ? begun[begun.length - 1].t : minOf(runs.map(a => a.t));
+                // Over a search's axes, the readings of its kind of move only (a
+                // rotation scan's would pile up at one X/Z spot, and the other way round).
+                const kind = searchKeys ? SEARCH_KINDS[search] : null;
                 // "until_end": the later phases' readings (and the verdict's) too.
-                const shown = s => s[PHASE] === phase.index || (view.until_end && (s[PHASE] > phase.index || s[PHASE] < 0));
-                const samples = run.samples.filter(s => s[T] >= since && shown(s));
+                const shown = s => (s[PHASE] === phase.index && (!kind || s[KIND] === kind))
+                    || (view.until_end && (s[PHASE] > phase.index || s[PHASE] < 0));
+                const samples = run.samples.filter(shown);
                 canvas.dataset.points = String(samples.length);
                 plot.update({
-                    key: `${run.key}:${name}:${keys.join(',')}:${since}`,
+                    key: `${run.key}:${name}:${keys.join(',')}`,
                     points: project(samples, axes),
                     names: axes.map(a => a.name), unit: axes[0].unit, minSpan: axes[0].unit === '°' ? 0.05 : 20,
                     threshold: run.threshold_w,

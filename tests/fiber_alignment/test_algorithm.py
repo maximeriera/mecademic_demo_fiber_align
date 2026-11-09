@@ -10,9 +10,9 @@ import math
 import pytest
 
 from app_logic.fiber_alignment import algorithm
-from app_logic.fiber_alignment.alignment import AlignmentError, AlignmentNoSignal
+from app_logic.fiber_alignment.alignment import AlignmentError, AlignmentNoSignal, AlignmentSettings
 
-from .sim import BEAM_WIDTH_UM, Scenario, simulate
+from .sim import BEAM_WIDTH_UM, FakeContext, Scenario, SimClock, simulate
 
 #: Starts: (x, z) µm and (rx, rz) ° from the optimum, and how the cell behaves.
 CASES = {
@@ -223,12 +223,12 @@ def test_back_beside_the_light_finds_it_again(monkeypatch):
     assert still[-1][6] >= state.detect_w
 
 
-def slow_meter(offset, range_up_s):
+def slow_meter(offset, range_up_s, **params):
     """The cell on 2026-11-06: ~0.1 nW of stray light, so the meter sits in its
     lowest range (120 nW here) and stays there ``range_up_s`` after light
     exceeds it, reading the range's top meanwhile."""
-    return Scenario(offset=offset, params=CELL_2026_11_PARAMS, meter_range_up_s=range_up_s, meter_lowest_range_w=1.2e-7,
-                    **{**CELL_2026_11, "background_w": 1e-10})
+    return Scenario(offset=offset, params={**CELL_2026_11_PARAMS, **params}, meter_range_up_s=range_up_s,
+                    meter_lowest_range_w=1.2e-7, **{**CELL_2026_11, "background_w": 1e-10})
 
 
 def test_light_read_far_under_its_power_on_the_move_is_a_hint():
@@ -243,11 +243,28 @@ def test_light_read_far_under_its_power_on_the_move_is_a_hint():
 
 
 def test_light_under_a_faintly_lit_centre_is_still_light():
-    # 180 nW at the start: a hint must beat 3× that, more than the detection
-    # level, but light at the detection level counts all the same.
-    run, state = acquire_only(slow_meter((98.41, -146.97, -0.3572, -0.3573), 0.3))
+    # 180 nW at the start: with a 6 dB hint gain, a hint must beat 4× that,
+    # more than the detection level, but light at the detection level counts
+    # all the same.
+    run, state = acquire_only(slow_meter((98.41, -146.97, -0.3572, -0.3573), 0.3, hint_gain_db=6.0))
     assert 0.1 * state.detect_w < run.rows[0][6] < state.detect_w
     assert run.context.published("align_acquire")[-1]["found"] and state.peak_w >= state.detect_w
+
+
+def test_a_hint_is_a_loss_hint_gain_db_better_than_the_centre():
+    settings = AlignmentSettings.from_context(FakeContext(SimClock(), {}))
+    assert settings.hint_gain_db == 3.0
+    assert AlignmentSettings.from_context(FakeContext(SimClock(), {"hint_gain_db": -4.0})).hint_gain_db == 4.0
+    search = algorithm._Search({}, centre_w=10e-9, hint_floor_w=1e-9, detect_w=500e-9, gain_db=3.0)
+    assert search.hint_w() == pytest.approx(19.95e-9, rel=1e-3)  # 3 dB better: twice the power
+    # Floored (a centre in the noise), and capped at the detection level.
+    search.centre_w = 0.0
+    assert search.hint_w() == pytest.approx(1e-9)
+    search.centre_w = 300e-9
+    assert search.hint_w() == pytest.approx(500e-9)
+    # The payloads carry it.
+    run, _ = acquire_only(slow_meter((-131.29, -42.02, -2.0401, 0.3002), 0.2, hint_gain_db=4.0))
+    assert all(a["hint_gain_db"] == 4.0 for a in run.context.published("align_acquire"))
 
 
 def test_the_peak_pattern_spans_a_fifth_of_the_width():

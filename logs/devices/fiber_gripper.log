@@ -179,3 +179,31 @@
 2026-11-09 18:09:50 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
 2026-11-09 18:09:51 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
 2026-11-09 18:09:57 | INFO    | http-216         | device.fiber_gripper   | SmarActMCS2:271  | [req=f1307d74] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 18:39:47 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 18:39:49 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 18:40:00 | INFO    | http-282         | device.fiber_gripper   | SmarActMCS2:271  | [req=8fae804f] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 18:45:00 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 18:45:01 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 18:45:05 | INFO    | http-127         | device.fiber_gripper   | SmarActMCS2:271  | [req=5ce95e73] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 18:49:30 | WARNING | http-10597       | device.fiber_gripper   | SmarActMCS2:216  | [req=275a7265] [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 18:50:31 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 18:50:32 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 18:50:42 | INFO    | MainThread       | device.fiber_gripper   | Device:122  | [fiber_gripper] device is being deleted.
+2026-11-09 19:04:57 | INFO    | MainThread       | device.fiber_gripper   | Device:104  | [fiber_gripper] device created.
+2026-11-09 19:07:11 | INFO    | http-2622        | device.fiber_gripper   | SmarActMCS2:290  | [req=368db490] [fiber_gripper] Referencing channel 0...
+2026-11-09 19:07:17 | INFO    | http-2622        | device.fiber_gripper   | SmarActMCS2:295  | [req=368db490] [fiber_gripper] Channel 0 referenced, at 0.000001 mm.
+2026-11-09 19:07:17 | INFO    | http-2622        | device.fiber_gripper   | SmarActMCS2:271  | [req=368db490] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 19:07:51 | WARNING | http-3728        | device.fiber_gripper   | SmarActMCS2:216  | [req=4f943ab1] [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 19:08:08 | WARNING | http-4114        | device.fiber_gripper   | SmarActMCS2:216  | [req=989fc1f9] [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 19:08:24 | WARNING | http-4550        | device.fiber_gripper   | SmarActMCS2:216  | [req=a5bb62d3] [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 19:08:26 | INFO    | http-4590        | device.fiber_gripper   | SmarActMCS2:271  | [req=b8bf5e8e] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 19:10:16 | INFO    | http-7046        | device.fiber_gripper   | SmarActMCS2:271  | [req=6cf7f864] [fiber_gripper] Connected: SmarAct;MCS2-00014497;MCS2-00014497;11/18/25 | S/N "MCS2-00014497" | channels 0="CT001/AT001"
+2026-11-09 19:13:57 | WARNING | http-15581       | device.fiber_gripper   | SmarActMCS2:216  | [req=e1adae8a] [fiber_gripper] Abort requested: stopping channels [0].
+2026-11-09 19:14:12 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:49   | [fiber_gripper] Close (channel 0): from 0.000001 mm to 0.000000 mm
+2026-11-09 19:14:12 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:62   | [fiber_gripper] Close (channel 0): done in 0.06 s, at -0.000000 mm
+2026-11-09 19:14:20 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:49   | [fiber_gripper] Open (channel 0): from 0.000002 mm to 5.000000 mm
+2026-11-09 19:14:26 | ERROR   | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:59   | [fiber_gripper] Open (channel 0): failed after 5.75 s: MCS2MotionError: Channel 0: movement failed (SENSOR_PRESENT, IS_REFERENCED, END_STOP_REACHED, MOVEMENT_FAILED) | at 4.979209 mm, state: SENSOR_PRESENT, IS_REFERENCED, END_STOP_REACHED, MOVEMENT_FAILED
+2026-11-09 19:14:35 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:49   | [fiber_gripper] Close (channel 0): from 4.978324 mm to 0.000000 mm
+2026-11-09 19:14:40 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:62   | [fiber_gripper] Close (channel 0): done in 5.02 s, at -0.000005 mm
+2026-11-09 19:14:41 | INFO    | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:49   | [fiber_gripper] Open (channel 0): from -0.000010 mm to 5.000000 mm
+2026-11-09 19:14:46 | ERROR   | TaskThread-MANUAL_ACTION | device.fiber_gripper   | gripper:59   | [fiber_gripper] Open (channel 0): failed after 5.34 s: MCS2MotionError: Channel 0: movement failed (SENSOR_PRESENT, IS_REFERENCED, END_STOP_REACHED, MOVEMENT_FAILED) | at 4.846569 mm, state: SENSOR_PRESENT, IS_REFERENCED, END_STOP_REACHED, MOVEMENT_FAILED

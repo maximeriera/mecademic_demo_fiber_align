@@ -154,11 +154,17 @@ async function main() {
         check(card.active && shown.cards.filter(c => c.active).length === 1, `${name}: its card is the active one`);
         check(Math.max(...card.ink) > INKED, `${name}: its card draws readings (ink ${card.ink.map(v => v.toFixed(3)).join('/')})`);
         check(shown.phasesFit, `${name}: every phase row fits in the alignment card`);
-        // A map "until_end" keeps taking the readings of the later phases.
+        // A map "until_end" keeps taking the readings of the later phases,
+        // over its own axes (not a search's) once its phase is over.
         shown.cards.forEach((c, k) => {
-            if (!(declared.phase_views[c.phase] || {}).until_end || k > i) return;
+            const view = declared.phase_views[c.phase] || {};
+            if (!view.until_end || k > i) return;
             const count = Number(c.points);
-            if (k < i) check(count > mapCounts[c.phase], `${c.phase}: its map keeps updating during ${name} (${mapCounts[c.phase]} → ${count} readings)`);
+            if (k < i) {
+                check(count > mapCounts[c.phase], `${c.phase}: its map keeps updating during ${name} (${mapCounts[c.phase]} → ${count} readings)`);
+                const axes = (view.axes || ['x', 'z']).join(',');
+                check(c.axes === axes, `${c.phase}: during ${name}, its map is over ${c.axes} (its own axes: ${axes})`);
+            }
             mapCounts[c.phase] = count;
         });
         await page.screenshot({ path: path.join(OUT, `${i + 1}-${name.toLowerCase()}.png`) });
@@ -202,10 +208,11 @@ async function main() {
             if (card.view === 'map') {
                 check(/light (found|at the start)/.test(card.sub), `${card.phase}: "${card.sub}" says where the light was found`);
                 if (final.full_search) check(card.sub.startsWith('full search · '), `${card.phase}: "${card.sub}" says the search ran in full`);
-                // The map follows the search that found the light, over the axes declared for it.
+                // After the run, over the map's own axes, where the later
+                // phases climbed (a search's only while its phase ran).
                 const view = declared.phase_views[card.phase] || {};
-                const axes = ((final.acquire_search && view.search_axes && view.search_axes[final.acquire_search]) || view.axes || ['x', 'z']).join(',');
-                check(card.axes === axes, `${card.phase}: the map is over ${card.axes} (the ${final.acquire_search || 'start'} search: ${axes})`);
+                const axes = (view.axes || ['x', 'z']).join(',');
+                check(card.axes === axes, `${card.phase}: after the run, the map is over ${card.axes} (its own axes: ${axes})`);
                 if (view.until_end) {
                     check(Number(card.points) === final.acquire_map_points,
                         `${card.phase}: the map plots every reading to the end of the run (${card.points} of ${final.acquire_map_points})`);

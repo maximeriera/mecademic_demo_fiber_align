@@ -165,6 +165,9 @@ class AlignmentSettings:
     acquire_capture_deg: float
     #: Lowest power counted as light (W). The algorithm raises it above the noise it measures.
     signal_detect_w: float
+    #: How much better a reading's loss against the source must be than at the
+    #: first-light search's centre to be a hint of light, which it restarts around (dB).
+    hint_gain_db: float
     #: Run both searches for first light to their full radius, even with light
     #: at the start: shows the whole search (demo).
     full_search: bool
@@ -202,6 +205,7 @@ class AlignmentSettings:
             acquire_capture_deg=float(context.get_param("acquire_capture_deg",
                                                         2.0 * float(context.get_param("angle_width_deg", 0.3)))),
             signal_detect_w=float(context.get_param("signal_detect_uw", 1.0)) * 1e-6,
+            hint_gain_db=abs(float(context.get_param("hint_gain_db", 3.0))),
             full_search=bool(context.get_param("acquire_full_search", False)),
             peak_grid=int(context.get_param("peak_grid", 5)),
             gradient_rounds=int(context.get_param("gradient_rounds", 8)),

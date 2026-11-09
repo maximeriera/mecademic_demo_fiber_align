@@ -186,7 +186,7 @@ mostly a matter of angle. Four phases:
 
 | Phase | What it does |
 |---|---|
-| Acquire | Starts at the fiber's remembered pose, if any. Measures the noise floor. Any light there (above `signal_detect_uw` and the noise) goes straight to Center. Otherwise Lissajous scans around it: a translation (X/Z), then a rotation (Rx/Rz), over a disc of 1/3, then 2/3, then all of `acquire_radius_um` / `acquire_radius_deg` (the Lissajous's corners brought back onto its circle). A hint of light (3× the centre's power, even far under the detection level: on the move, the meter can read µW of light as 50-100 nW), confirmed at rest, becomes the new centre and the scans start again around it. Light at the detection level ends the search, once confirmed at rest: back at the pose of a reading taken on the move, a fiber that misses the light (the meter lagging, or poses read late) finds it again going back over that stretch of the scan, 3× slower, so Center always starts on light. Dark at the remembered pose, the same around the start; still dark, rotation scans at 6 points `acquire_ring_um` around the start. Still no light stops the alignment with "check the laser, the fibers and the align_start pose". With `acquire_full_search` (for demos), a translation then a rotation scan over the full radius run to their end first. |
+| Acquire | Starts at the fiber's remembered pose, if any. Measures the noise floor. Any light there (above `signal_detect_uw` and the noise) goes straight to Center. Otherwise Lissajous scans around it: a translation (X/Z), then a rotation (Rx/Rz), over a disc of 1/3, then 2/3, then all of `acquire_radius_um` / `acquire_radius_deg` (the Lissajous's corners brought back onto its circle). A hint of light (a loss against the source `hint_gain_db`, +3 dB, better than at the centre, even far under the detection level: on the move, the meter can read µW of light as 50-100 nW), confirmed at rest, becomes the new centre and the scans start again around it. Light at the detection level ends the search, once confirmed at rest: back at the pose of a reading taken on the move, a fiber that misses the light (the meter lagging, or poses read late) finds it again going back over that stretch of the scan, 3× slower, so Center always starts on light. Dark at the remembered pose, the same around the start; still dark, rotation scans at 6 points `acquire_ring_um` around the start. Still no light stops the alignment with "check the laser, the fibers and the align_start pose". With `acquire_full_search` (for demos), a translation then a rotation scan over the full radius run to their end first. |
 | Center | Scans across the light along X then Z, both ways, fits each scan with a Gaussian over the noise floor and moves to its centre, until the centre stops moving. A window that misses the centre moves towards it by half its span at most; failing that, the fiber goes to the best reading, never to an extrapolated centre. A window without light widens. The meter's range is fixed during a scan, at 10× the power expected, so faint first light stays visible. |
 | Angle | For Rx then Rz: tilts stepping away from the current one (half an angle width at first) while the power rises, each re-centred along the lateral axis the tilt walks the beam on; a parabola through the best tilt and its neighbours picks the tilt. A tilt without light is a reading of no power, not an error. Again with half the step while it gains. |
 | Peak | First the gradient circles of the cell's first script: rounds of a circle in X/Z, then one in Rx/Rz (0.15 width radius: ~36 µm, ~0.03°), read on the move both ways. A plane fitted to the log power over each gives the slope, and a step up it, sized from the slope and the width (at most 0.5 width). The steps shrink by half after one overshoots, and a step under twice its noise is not taken. The tilt circle carries X/Z along by the walk Angle measured, so the beam stays centred. They stop once no step is taken, or after `gradient_rounds` (8); usually 1 to 4 rounds of ~2.5 s on the cell (~1 s simulated). Kept only if the power at rest is not lower. Then readings at rest on a square pattern of ±0.2 lateral width around the centre (~±50 µm on the cell's ends), `peak_grid` per side (5 by default: 25 readings, ~2.5 s), a quadratic fit of the log power and a step to its top (at most the pattern's radius), until the steps are small. Ends on the best reading taken at rest. |
@@ -233,16 +233,18 @@ screens.
   outlined in yellow. Positions are offsets from the alignment start in the
   tool frame, the axes the algorithm moves along (X/Z lateral in µm, Rx/Rz
   in °).
-  - Acquire: a 3D landscape of the power along the latest search scan,
-    over X/Z whichever scan ran (the readings at the start when light was
-    already there). A rotation scan stays at one X/Z spot, so it shows as a
-    column of readings there until the later phases spread out. Until light is found it is
+  - Acquire: a 3D landscape of the power over the axes of the search
+    running: X/Z during a translation scan, Rx/Rz during a rotation scan, so
+    both Lissajous show. It keeps every scan of that search, restarts around
+    a hint included, so what was seen stays on screen. Once Center starts,
+    it is over X/Z, with every reading (X/Z too for the readings at the
+    start when light was already there). Until light is found it is
     scaled to the level counted as light, marked "light" on the colour bar.
     Its line says where the scan is centred unless at the start
     ("remembered pose", "hint 1", "ring 3/6"), and reads "full search · …" when
     `acquire_full_search` is on. It keeps filling
-    through the later phases, over the same axes, with the best power seen at
-    each spot: the landscape rises to the final peak.
+    through the later phases with the best power seen at each spot: the
+    landscape rises to the final peak.
   - Center: the latest X and Z scans, both directions (green forward, blue
     backward), the fitted Gaussian and the centre chosen, in yellow.
   - Angle: the power against each tilt with its parabola and the beam's

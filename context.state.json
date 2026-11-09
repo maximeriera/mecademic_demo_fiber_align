@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "saved_at": "2026-11-09T18:11:40.727975+00:00",
+  "saved_at": "2026-11-09T20:32:00.830071+00:00",
   "source": "context.yaml",
   "values": {
     "params": {
-      "power_threshold_db": -0.4,
+      "power_threshold_db": -0.5,
       "align_range_um": 2000.0,
       "align_range_deg": 8.0,
       "align_timeout_s": 150.0,
@@ -17,11 +17,12 @@
       "acquire_capture_um": 250.0,
       "acquire_capture_deg": 0.3,
       "acquire_ring_um": 750.0,
-      "signal_detect_uw": 0.5,
+      "signal_detect_uw": 1.0,
+      "hint_gain_db": 3.0,
       "acquire_full_search": false,
       "hold_final_s": 5.0,
       "use_remembered_pose": false,
-      "peak_grid": 5,
+      "peak_grid": 3,
       "gradient_rounds": 8,
       "joint_vel_pct": 50.0,
       "lin_vel_mm_s": 125.0,
@@ -38,8 +39,8 @@
       "next_fiber": 2,
       "held_fiber": 0,
       "at_alignment": true,
-      "fiber_poses": "{\"0\": {\"pose\": [209.2712, -51.2644, 97.4393, -176.9158, -0.048, -2.558], \"power_mw\": 0.9316, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}, \"1\": {\"pose\": [209.2144, -51.2639, 97.417, -175.799, -0.0972, -2.7433], \"power_mw\": 0.9258, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}}",
-      "aligned_count": 1,
+      "fiber_poses": "{\"0\": {\"pose\": [209.3023, -51.2628, 97.4599, -176.6914, -0.0575, -2.5603], \"power_mw\": 0.9332, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}, \"1\": {\"pose\": [209.2144, -51.2639, 97.417, -175.799, -0.0972, -2.7433], \"power_mw\": 0.9258, \"trf\": [0.0, -8.0, 14.0, 0.0, 0.0, 180.0]}}",
+      "aligned_count": 59,
       "failed_count": 0,
       "error_count": 0,
       "last_error": ""
